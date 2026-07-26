@@ -1,0 +1,2577 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Controle Interno — Agrícola Mattioni Ltda</title>
+
+<!-- Instalação como app (PWA) -->
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#1F211B" />
+<link rel="icon" href="/icon-192.png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Ctrl. Interno" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+  :root {
+    --bg: #1F211B;
+    --surface: #2A2C24;
+    --surface2: #33352B;
+    --surface3: #3C3E32;
+    --border: #484A3B;
+    --yellow: #E8B923;
+    --rust: #C1502E;
+    --green: #7FA05B;
+    --text: #EEEBDF;
+    --text-muted: #A8A692;
+    --text-faint: #726F5D;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+  }
+  .ff-display { font-family: 'Oswald', sans-serif; letter-spacing: 0.03em; }
+  .ff-mono { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; }
+
+  input, select, textarea, button { font-family: inherit; font-size: 14px; }
+  input, select, textarea {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 9px 10px;
+    width: 100%;
+  }
+  input::placeholder, textarea::placeholder { color: var(--text-faint); }
+  input:focus, select:focus, textarea:focus, button:focus-visible {
+    outline: 2px solid var(--yellow);
+    outline-offset: 1px;
+  }
+  button { cursor: pointer; border: none; }
+  label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--text-muted); }
+
+  .btn-primary {
+    background: var(--yellow);
+    color: #241F0F;
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 11px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .btn-primary:disabled { background: var(--surface3); color: var(--text-faint); cursor: not-allowed; }
+  .btn-ghost {
+    background: var(--surface2);
+    color: var(--text-muted);
+    border-radius: 8px;
+    padding: 9px 14px;
+  }
+
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 16px; }
+
+  /* Auth screen */
+  #auth-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .auth-card {
+    width: 100%;
+    max-width: 380px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px 24px;
+  }
+  .auth-logo {
+    width: 44px; height: 44px; border-radius: 10px;
+    background: var(--yellow); color: #241F0F;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; margin-bottom: 14px;
+  }
+  .auth-tabs { display: flex; gap: 4px; margin-bottom: 18px; background: var(--surface2); border-radius: 8px; padding: 3px; }
+  .auth-tab { flex: 1; text-align: center; padding: 8px; border-radius: 6px; background: transparent; color: var(--text-muted); font-weight: 500; }
+  .auth-tab.active { background: var(--yellow); color: #241F0F; }
+  .field-gap { display: flex; flex-direction: column; gap: 12px; margin-bottom: 14px; }
+  .auth-error { background: rgba(193,80,46,0.15); border: 1px solid var(--rust); color: #E8B7A6; padding: 8px 10px; border-radius: 6px; font-size: 13px; margin-bottom: 12px; }
+
+  /* App header */
+  header { position: sticky; top: 0; z-index: 20; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .header-top { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .logo-box { width: 36px; height: 36px; border-radius: 8px; background: var(--yellow); color: #241F0F; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  h1.title { font-size: 17px; margin: 0; font-weight: 600; letter-spacing: 0.04em; }
+  .subtitle { font-size: 12px; color: var(--text-muted); margin: 3px 0 0; }
+  .icon-btn { background: var(--surface2); border-radius: 8px; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); }
+
+  nav.tabs { display: flex; gap: 4px; }
+  .tab-btn { padding: 10px 12px; background: transparent; color: var(--text-muted); font-family: 'Oswald', sans-serif; font-size: 13px; font-weight: 500; letter-spacing: 0.03em; border-bottom: 2px solid transparent; border-radius: 0; }
+  .tab-btn.active { color: var(--yellow); border-bottom: 2px solid var(--yellow); }
+
+  main { padding: 20px 0 110px; }
+
+  .section-label { font-family: 'Oswald', sans-serif; font-size: 12px; color: var(--text-muted); letter-spacing: 0.08em; font-weight: 600; text-transform: uppercase; margin: 0 0 8px; }
+
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+  .stat-card .label { font-size: 12px; color: var(--text-muted); margin: 0 0 6px; }
+  .stat-card .value { font-size: 20px; font-weight: 600; margin: 0; }
+
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 20px; }
+  .bar-row { margin-bottom: 12px; }
+  .bar-row:last-child { margin-bottom: 0; }
+  .bar-top { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+  .bar-track { background: var(--surface2); border-radius: 3px; height: 6px; overflow: hidden; }
+  .bar-fill { background: var(--yellow); height: 100%; border-radius: 3px; }
+
+  .consumption-row { display: flex; align-items: center; justify-content: space-between; font-size: 14px; padding: 5px 0; }
+
+  .refill-row { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; }
+  .refill-icon { width: 34px; height: 34px; border-radius: 8px; background: var(--surface2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--yellow); font-size: 15px; }
+  .refill-main { flex: 1; min-width: 0; }
+  .refill-top { display: flex; justify-content: space-between; gap: 8px; font-weight: 500; font-size: 14px; }
+  .refill-meta { color: var(--text-muted); font-size: 12px; margin-top: 3px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--text-faint); display: inline-block; }
+  .del-btn { background: transparent; color: var(--text-faint); padding: 4px; border-radius: 6px; flex-shrink: 0; }
+
+  .chip-row { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 14px; padding-bottom: 2px; }
+  .chip { flex-shrink: 0; padding: 7px 13px; border-radius: 999px; font-size: 12px; background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); white-space: nowrap; }
+  .chip.active { background: var(--yellow); color: #241F0F; border-color: var(--yellow); font-weight: 500; }
+
+  .empty-state { border: 1px dashed var(--border); background: var(--surface); border-radius: 10px; padding: 40px 24px; text-align: center; }
+  .empty-state .icon { font-size: 24px; margin-bottom: 8px; color: var(--text-faint); }
+  .empty-state .title { font-family: 'Oswald', sans-serif; font-size: 14px; margin: 0 0 6px; }
+  .empty-state .text { font-size: 12px; color: var(--text-muted); max-width: 280px; margin: 0 auto; }
+
+  .machine-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  @media (min-width: 560px) { .machine-grid { grid-template-columns: 1fr 1fr; } }
+  .machine-card { position: relative; border-radius: 10px; padding: 16px; background: linear-gradient(155deg, var(--surface2), var(--surface)); border: 1px solid var(--border); }
+  .rivet { position: absolute; width: 5px; height: 5px; border-radius: 50%; background: var(--surface3); box-shadow: inset 0 1px 1px rgba(0,0,0,0.5); }
+  .machine-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; padding: 0 2px; }
+  .machine-name { font-family: 'Oswald', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.03em; margin: 0; }
+  .machine-type { font-size: 11px; color: var(--text-faint); margin: 2px 0 0; }
+  .machine-plate { margin: 0 2px 6px; background: #17180F; border: 1px solid var(--surface3); border-radius: 6px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; }
+  .machine-plate .k { font-size: 10px; color: var(--green); letter-spacing: 0.05em; }
+  .machine-plate .v { font-size: 12px; }
+  .machine-consumption { display: flex; justify-content: space-between; align-items: center; padding: 4px 2px 0; font-size: 11px; }
+
+  /* FAB */
+  .fab-row { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 25; }
+  @media (min-width: 640px) { .fab-row { left: auto; right: 24px; transform: none; } }
+  .fab { position: static; background: var(--yellow); color: #241F0F; border-radius: 999px; padding: 13px 20px; display: flex; align-items: center; gap: 8px; font-weight: 600; box-shadow: 0 6px 18px rgba(0,0,0,0.45); font-family: 'Oswald', sans-serif; font-size: 13px; letter-spacing: 0.03em; white-space: nowrap; }
+  .fab.secondary { background: var(--green); color: #12160C; }
+
+  /* Modal */
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(10,10,7,0.65); z-index: 30; display: flex; align-items: flex-end; justify-content: center; }
+  @media (min-width: 640px) { .modal-backdrop { align-items: center; } }
+  .modal { width: 100%; max-width: 420px; max-height: 88vh; overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 16px 16px 0 0; }
+  @media (min-width: 640px) { .modal { border-radius: 12px; } }
+  .modal-head { position: sticky; top: 0; display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .modal-title { font-family: 'Oswald', sans-serif; font-size: 13px; letter-spacing: 0.04em; font-weight: 600; margin: 0; text-transform: uppercase; }
+  .modal-close { background: transparent; color: var(--text-muted); padding: 4px; }
+  .modal-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .hint { font-size: 12px; color: var(--text-faint); margin: 0; }
+
+  .banner { max-width: 760px; margin: 12px auto 0; padding: 8px 12px; border-radius: 8px; font-size: 13px; }
+  .banner.error { background: rgba(193,80,46,0.15); border: 1px solid var(--rust); color: #E8B7A6; }
+
+  /* Fotos */
+  .photo-field { display: flex; flex-direction: column; gap: 6px; }
+  .photo-btn-row { display: flex; gap: 8px; }
+  .photo-pick-btn { flex: 1; background: var(--surface2); border: 1px dashed var(--border); color: var(--text-muted); border-radius: 8px; padding: 10px; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .photo-pick-btn.has-photo { border-style: solid; border-color: var(--green); color: var(--text); }
+  .photo-thumb { width: 100%; max-height: 140px; object-fit: cover; border-radius: 8px; margin-top: 6px; border: 1px solid var(--border); }
+  .extract-btn { background: var(--surface3); color: var(--yellow); border-radius: 8px; padding: 9px; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .extract-btn:disabled { color: var(--text-faint); cursor: not-allowed; }
+  .extract-hint { font-size: 11px; color: var(--text-faint); }
+  .refill-photo-link { font-size: 11px; color: var(--yellow); background: transparent; padding: 4px 0; text-align: left; }
+  .photo-viewer-imgs { display: flex; flex-direction: column; gap: 12px; }
+  .photo-viewer-imgs img { width: 100%; border-radius: 8px; border: 1px solid var(--border); }
+  .photo-viewer-imgs .cap { font-size: 11px; color: var(--text-muted); margin: 4px 0 0; }
+
+  /* Papéis / Equipe */
+  .role-badge { font-size: 10px; padding: 2px 7px; border-radius: 999px; letter-spacing: 0.04em; font-weight: 600; text-transform: uppercase; }
+  .role-badge.admin { background: rgba(232,185,35,0.18); color: var(--yellow); }
+  .role-badge.funcionario { background: var(--surface2); color: var(--text-muted); }
+  .team-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; }
+  .team-row .name { font-size: 14px; font-weight: 500; }
+  .team-row .email { font-size: 12px; color: var(--text-muted); }
+
+  /* Estoque */
+  .stock-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 20px; }
+  .stock-card.low { border-color: var(--rust); background: rgba(193,80,46,0.08); }
+  .stock-top { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px; }
+  .stock-liters { font-size: 24px; font-weight: 600; }
+  .stock-liters .unit { font-size: 12px; color: var(--text-muted); font-family: 'Inter', sans-serif; }
+  .stock-warning { color: var(--rust); font-size: 12px; margin: 6px 0 0; font-weight: 500; }
+  .stock-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .small-btn { font-size: 12px; padding: 8px 12px; border-radius: 8px; background: var(--surface2); color: var(--text-muted); }
+  .small-btn.primary { background: var(--yellow); color: #241F0F; font-weight: 600; }
+
+  /* Defensivos */
+  .product-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; }
+  .product-top { display: flex; justify-content: space-between; align-items: center; }
+  .product-name { font-size: 14px; font-weight: 500; }
+  .product-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .product-stock { font-size: 13px; margin-top: 6px; }
+  .category-tag { font-size: 10px; padding: 2px 7px; border-radius: 999px; background: var(--surface2); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
+  .sub-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+  .sub-tab { padding: 7px 13px; border-radius: 999px; font-size: 12px; background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); }
+  .sub-tab.active { background: var(--yellow); color: #241F0F; border-color: var(--yellow); font-weight: 500; }
+
+  /* Produção / vendas */
+  .paid-tag { font-size: 10px; padding: 2px 8px; border-radius: 999px; letter-spacing: 0.03em; font-weight: 600; text-transform: uppercase; }
+  .paid-tag.yes { background: rgba(127,160,91,0.18); color: var(--green); }
+  .paid-tag.no { background: rgba(193,80,46,0.18); color: var(--rust); }
+  .weight-photos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- ===================== AUTH SCREEN ===================== -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">⛽</div>
+    <h1 class="ff-display" style="font-size:16px; margin:0 0 2px; letter-spacing:0.03em;">CONTROLE INTERNO</h1>
+    <p style="font-size:12px; color:var(--text-muted); margin:0 0 18px;">Agrícola Mattioni Ltda</p>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="setAuthMode('login')">Entrar</button>
+      <button class="auth-tab" id="tab-register" onclick="setAuthMode('register')">Criar conta</button>
+    </div>
+
+    <div id="auth-error" class="auth-error hidden"></div>
+    <p id="auth-hint" style="font-size:11px; color:var(--text-faint); margin:-6px 0 14px;">
+      A primeira conta criada aqui vira administradora. Contas de funcionários são criadas
+      pelo administrador dentro do app, na aba "Equipe".
+    </p>
+
+    <form id="auth-form">
+      <div class="field-gap">
+        <label id="field-name" class="hidden">
+          Nome
+          <input type="text" id="input-name" placeholder="Seu nome" autocomplete="name" />
+        </label>
+        <label>
+          E-mail
+          <input type="email" id="input-email" placeholder="voce@exemplo.com" autocomplete="email" required />
+        </label>
+        <label>
+          Senha
+          <input type="password" id="input-password" placeholder="Mínimo 6 caracteres" autocomplete="current-password" required />
+        </label>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;" id="auth-submit">ENTRAR</button>
+    </form>
+  </div>
+</div>
+
+<!-- ===================== APP ===================== -->
+<div id="app-screen" class="hidden">
+  <header>
+    <div class="wrap header-top">
+      <div class="header-left">
+        <div class="logo-box">⛽</div>
+        <div>
+          <h1 class="title ff-display">CONTROLE INTERNO</h1>
+          <p class="subtitle" id="welcome-text"></p>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="icon-btn" onclick="loadAll()" title="Atualizar">⟳</button>
+        <button class="icon-btn" onclick="logout()" title="Sair">⏻</button>
+      </div>
+    </div>
+    <nav class="tabs wrap" style="padding-bottom:0;">
+      <button class="tab-btn active" data-tab="dashboard" onclick="setTab('dashboard')">Painel</button>
+      <button class="tab-btn" data-tab="refills" onclick="setTab('refills')">Abastecimentos</button>
+      <button class="tab-btn" data-tab="machines" onclick="setTab('machines')">Máquinas</button>
+      <button class="tab-btn" data-tab="defensivos" onclick="setTab('defensivos')">Custos Pivôs</button>
+      <button class="tab-btn" data-tab="producao" onclick="setTab('producao')">Entradas</button>
+      <button class="tab-btn" data-tab="estoque-graos" onclick="setTab('estoque-graos')">Saídas</button>
+      <button class="tab-btn hidden" id="tab-btn-team" data-tab="team" onclick="setTab('team')">Equipe</button>
+    </nav>
+  </header>
+
+  <div id="app-banner"></div>
+
+  <main class="wrap">
+    <div id="tab-dashboard"></div>
+    <div id="tab-refills" class="hidden"></div>
+    <div id="tab-machines" class="hidden"></div>
+    <div id="tab-defensivos" class="hidden"></div>
+    <div id="tab-producao" class="hidden"></div>
+    <div id="tab-estoque-graos" class="hidden"></div>
+    <div id="tab-team" class="hidden"></div>
+  </main>
+
+  <div class="fab-row">
+    <button class="fab secondary hidden" id="fab-btn-secondary" onclick="openFabActionSecondary()">+ <span id="fab-label-secondary">PLANTIO</span></button>
+    <button class="fab" id="fab-btn" onclick="openFabAction()">+ <span id="fab-label">NOVO ABASTECIMENTO</span></button>
+  </div>
+</div>
+
+<div id="modal-root"></div>
+
+<script>
+/* =========================================================================
+   Estado e utilitários
+   ========================================================================= */
+const MACHINE_TYPES = [
+  { value: "trator", label: "Trator", icon: "🚜" },
+  { value: "colheitadeira", label: "Colheitadeira", icon: "🚜" },
+  { value: "pulverizador", label: "Pulverizador", icon: "🚿" },
+  { value: "pa_carregadeira", label: "Pá Carregadeira", icon: "🏗️" },
+  { value: "escavadeira", label: "Escavadeira", icon: "🏗️" },
+  { value: "rolo_compactador", label: "Rolo Compactador", icon: "🛞" },
+  { value: "caminhao", label: "Caminhão", icon: "🚚" },
+  { value: "camionete", label: "Camionete/Utilitário", icon: "🚚" },
+  { value: "implemento", label: "Implemento", icon: "🔧" },
+  { value: "gerador", label: "Gerador", icon: "⚙️" },
+  { value: "outro", label: "Outro", icon: "🔧" },
+];
+const FUEL_TYPES = ["Diesel S10", "Diesel S500", "Gasolina", "Etanol", "Arla 32"];
+
+let state = {
+  token: localStorage.getItem("token") || null,
+  user: JSON.parse(localStorage.getItem("user") || "null"),
+  authMode: "login",
+  tab: "dashboard",
+  machines: [],
+  refills: [],
+  team: [],
+  filterMachine: "all",
+  stock: null,
+  products: [],
+  pivots: [],
+  applications: [],
+  defensivosSubTab: "produtos",
+  harvestLoads: [],
+  sales: [],
+  grainStock: null,
+  producaoSubTab: "cargas",
+  estoqueSubTab: "resumo",
+  plantings: [],
+  energyEntries: [],
+  plantingCosts: { plantings: [], generalDiesel: 0 },
+  oilChanges: [],
+  fieldWorkers: [],
+};
+
+const PRODUCT_CATEGORIES = [
+  { value: "semente", label: "Semente" },
+  { value: "tratamento_semente", label: "Tratamento de sementes" },
+  { value: "herbicida", label: "Herbicida" },
+  { value: "fungicida", label: "Fungicida" },
+  { value: "inseticida", label: "Inseticida" },
+  { value: "adubo", label: "Adubo/Fertilizante" },
+  { value: "adjuvante", label: "Adjuvante" },
+  { value: "outro", label: "Outro" },
+];
+
+function isAdmin() {
+  return state.user && state.user.role === "admin";
+}
+
+function iconFor(type) {
+  return (MACHINE_TYPES.find((t) => t.value === type) || MACHINE_TYPES.find((t) => t.value === "outro")).icon;
+}
+function labelFor(type) {
+  return (MACHINE_TYPES.find((t) => t.value === type) || MACHINE_TYPES.find((t) => t.value === "outro")).label;
+}
+// Caminhões e camionetes rodam em estrada — usam odômetro (km). O resto
+// (trator, colheitadeira, implemento, gerador, outro) usa horímetro (horas).
+function usesOdometer(type) {
+  return type === "caminhao" || type === "camionete";
+}
+function readingUnitLabel(type) {
+  return usesOdometer(type) ? "km" : "h";
+}
+
+/* =========================================================================
+   Troca de óleo — status (ok / logo / atrasada / sem registro)
+   ========================================================================= */
+// "motor" vale pra qualquer máquina. "hidraulico" e "transmissao" só fazem
+// sentido em tratores — o mesmo intervalo de alerta (500h/6 meses) vale
+// pros três por padrão, já que o app não tem como saber o manual de cada
+// equipamento.
+const OIL_TYPES = [
+  { value: "motor", label: "Óleo do motor", appliesTo: null },
+  { value: "hidraulico", label: "Óleo hidráulico", appliesTo: ["trator"] },
+  { value: "transmissao", label: "Óleo da transmissão", appliesTo: ["trator"] },
+];
+function applicableOilTypes(machineType) {
+  return OIL_TYPES.filter((t) => !t.appliesTo || t.appliesTo.includes(machineType));
+}
+function computeOilAlerts() {
+  const alerts = [];
+  state.machines.forEach((m) => {
+    applicableOilTypes(m.type).forEach((ot) => {
+      const status = oilStatusFor(m, ot.value);
+      if (status.level === "overdue" || status.level === "soon") alerts.push({ m, ot, status });
+    });
+  });
+  return alerts;
+}
+function lastReadingForMachine(machineId) {
+  const list = state.refills
+    .filter((r) => r.machine_id == machineId && r.hourmeter !== null && r.hourmeter !== undefined)
+    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  return list.length ? Number(list[0].hourmeter) : null;
+}
+function monthsBetween(fromIso, toDate) {
+  const from = new Date(fromIso);
+  return (toDate - from) / (1000 * 60 * 60 * 24 * 30.4375);
+}
+function oilStatusFor(machine, oilType) {
+  const interval = usesOdometer(machine.type)
+    ? { usage: 10000, months: 6, unit: "km" }
+    : { usage: 500, months: 6, unit: "h" };
+
+  const history = state.oilChanges
+    .filter((o) => o.machine_id == machine.id && (o.oil_type || "motor") === oilType)
+    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  const last = history[0] || null;
+
+  if (!last) {
+    return { level: "none", interval, last: null, currentReading: lastReadingForMachine(machine.id) };
+  }
+
+  const currentReading = lastReadingForMachine(machine.id);
+  const usageSince = currentReading !== null ? currentReading - Number(last.reading) : null;
+  const monthsSince = monthsBetween(last.date, new Date());
+
+  const usageRatio = usageSince !== null && usageSince >= 0 ? usageSince / interval.usage : 0;
+  const timeRatio = monthsSince / interval.months;
+  const worstRatio = Math.max(usageRatio, timeRatio);
+
+  let level = "ok";
+  if (worstRatio >= 1) level = "overdue";
+  else if (worstRatio >= 0.85) level = "soon";
+
+  return { level, interval, last, currentReading, usageSince, monthsSince };
+}
+
+function fmtBRL(n) {
+  return (Number(n) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+function fmtNum(n, digits = 1) {
+  return (Number(n) || 0).toLocaleString("pt-BR", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+}
+function fmtDate(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  return d.toLocaleDateString("pt-BR", { timeZone: "UTC" });
+}
+function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+function monthKey(iso) {
+  return iso ? iso.slice(0, 7) : "";
+}
+function escapeHtml(str) {
+  return (str ?? "").toString().replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+async function api(path, opts = {}) {
+  const headers = Object.assign({ "Content-Type": "application/json" }, opts.headers || {});
+  if (state.token) headers["Authorization"] = "Bearer " + state.token;
+  const res = await fetch("/api" + path, { ...opts, headers });
+  if (res.status === 401) {
+    logout();
+    throw new Error("Sessão expirada.");
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "Erro na requisição.");
+  return data;
+}
+
+function showBanner(msg) {
+  const el = document.getElementById("app-banner");
+  if (!msg) { el.innerHTML = ""; return; }
+  el.innerHTML = `<div class="banner error wrap">${escapeHtml(msg)}</div>`;
+}
+
+/* =========================================================================
+   Autenticação
+   ========================================================================= */
+function setAuthMode(mode) {
+  state.authMode = mode;
+  document.getElementById("tab-login").classList.toggle("active", mode === "login");
+  document.getElementById("tab-register").classList.toggle("active", mode === "register");
+  document.getElementById("field-name").classList.toggle("hidden", mode === "login");
+  document.getElementById("input-name").required = mode === "register";
+  document.getElementById("auth-submit").textContent = mode === "login" ? "ENTRAR" : "CRIAR CONTA";
+  document.getElementById("auth-error").classList.add("hidden");
+}
+
+document.getElementById("auth-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById("auth-error");
+  errEl.classList.add("hidden");
+  const email = document.getElementById("input-email").value.trim();
+  const password = document.getElementById("input-password").value;
+  const name = document.getElementById("input-name").value.trim();
+  const submitBtn = document.getElementById("auth-submit");
+  submitBtn.disabled = true;
+
+  try {
+    const path = state.authMode === "login" ? "/auth/login" : "/auth/register";
+    const body = state.authMode === "login" ? { email, password } : { name, email, password };
+    const data = await api(path, { method: "POST", body: JSON.stringify(body) });
+    state.token = data.token;
+    state.user = data.user;
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(data.user));
+    await enterApp();
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.classList.remove("hidden");
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
+
+function logout() {
+  state.token = null;
+  state.user = null;
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  document.getElementById("app-screen").classList.add("hidden");
+  document.getElementById("auth-screen").classList.remove("hidden");
+}
+
+async function enterApp() {
+  document.getElementById("auth-screen").classList.add("hidden");
+  document.getElementById("app-screen").classList.remove("hidden");
+  const roleLabel = isAdmin() ? "administrador" : "funcionário";
+  document.getElementById("welcome-text").textContent =
+    "Agrícola Mattioni Ltda · você é " + state.user.name + " (" + roleLabel + ")";
+  document.getElementById("tab-btn-team").classList.toggle("hidden", !isAdmin());
+  await loadAll();
+}
+
+/* =========================================================================
+   Carregamento de dados
+   ========================================================================= */
+async function loadAll() {
+  try {
+    const calls = [
+      api("/machines"),
+      api("/refills"),
+      api("/stock"),
+      api("/products"),
+      api("/pivots"),
+      api("/applications"),
+      api("/production"),
+      api("/sales"),
+      api("/plantings"),
+      api("/oil-changes"),
+      api("/field-workers"),
+    ];
+    if (isAdmin()) calls.push(api("/grain-stock"));
+    if (isAdmin()) calls.push(api("/users"));
+    if (isAdmin()) calls.push(api("/energy"));
+    if (isAdmin()) calls.push(api("/plantings/costs"));
+    const results = await Promise.all(calls);
+    state.machines = results[0];
+    state.refills = results[1];
+    state.stock = results[2];
+    state.products = results[3];
+    state.pivots = results[4];
+    state.applications = results[5];
+    state.harvestLoads = results[6];
+    state.sales = results[7];
+    state.plantings = results[8];
+    state.oilChanges = results[9];
+    state.fieldWorkers = results[10];
+    let next = 11;
+    state.grainStock = isAdmin() ? results[next++] : null;
+    if (isAdmin()) state.team = results[next++];
+    state.energyEntries = isAdmin() ? results[next++] : [];
+    state.plantingCosts = isAdmin() ? results[next++] : { plantings: [], generalDiesel: 0 };
+    showBanner(null);
+    render();
+  } catch (err) {
+    showBanner(err.message);
+  }
+}
+
+/* =========================================================================
+   Cálculo de consumo (L/h)
+   ========================================================================= */
+function computeConsumption(machineId) {
+  const list = state.refills
+    .filter((r) => r.machine_id == machineId && r.hourmeter !== null && r.hourmeter !== undefined)
+    .sort((a, b) => Number(a.hourmeter) - Number(b.hourmeter));
+  if (list.length < 2) return null;
+  let totalLiters = 0, totalHours = 0;
+  for (let i = 1; i < list.length; i++) {
+    const hours = Number(list[i].hourmeter) - Number(list[i - 1].hourmeter);
+    if (hours > 0) {
+      totalLiters += Number(list[i].liters || 0);
+      totalHours += hours;
+    }
+  }
+  if (totalHours === 0) return null;
+  return totalLiters / totalHours;
+}
+
+/* =========================================================================
+   Navegação por abas
+   ========================================================================= */
+function setTab(tab) {
+  state.tab = tab;
+  document.querySelectorAll(".tab-btn").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
+  document.getElementById("tab-dashboard").classList.toggle("hidden", tab !== "dashboard");
+  document.getElementById("tab-refills").classList.toggle("hidden", tab !== "refills");
+  document.getElementById("tab-machines").classList.toggle("hidden", tab !== "machines");
+  document.getElementById("tab-defensivos").classList.toggle("hidden", tab !== "defensivos");
+  document.getElementById("tab-producao").classList.toggle("hidden", tab !== "producao");
+  document.getElementById("tab-estoque-graos").classList.toggle("hidden", tab !== "estoque-graos");
+  document.getElementById("tab-team").classList.toggle("hidden", tab !== "team");
+
+  const fab = document.getElementById("fab-btn");
+  const fabSecondary = document.getElementById("fab-btn-secondary");
+  const isAplicacoesTab = tab === "defensivos" && state.defensivosSubTab === "aplicacoes" && isAdmin();
+  const hideForDefensivos = tab === "defensivos" && (state.defensivosSubTab === "custos" || !isAdmin());
+  const hideForProducao = tab === "producao" && state.producaoSubTab === "produtividade";
+  const effectiveEstoqueSubTab = isAdmin() ? state.estoqueSubTab : "vendas";
+  const hideForEstoque = tab === "estoque-graos" && effectiveEstoqueSubTab !== "vendas";
+  if ((tab === "machines" && !isAdmin()) || hideForDefensivos || hideForProducao || hideForEstoque) {
+    fab.classList.add("hidden");
+    fabSecondary.classList.add("hidden");
+  } else {
+    fab.classList.remove("hidden");
+    const labels = {
+      machines: "NOVA MÁQUINA",
+      team: "NOVO USUÁRIO",
+      refills: "NOVO ABASTECIMENTO",
+      dashboard: "NOVO ABASTECIMENTO",
+      defensivos: { produtos: "NOVO PRODUTO", pivos: "NOVO PIVÔ", aplicacoes: "APLICAÇÃO", culturas: "NOVA CULTURA", energia: "NOVO LANÇAMENTO" }[state.defensivosSubTab],
+      producao: "NOVA CARGA",
+      "estoque-graos": "NOVA VENDA",
+    };
+    document.getElementById("fab-label").textContent = labels[tab] || "NOVO ABASTECIMENTO";
+    fabSecondary.classList.toggle("hidden", !isAplicacoesTab);
+  }
+  render();
+}
+function openFabAction() {
+  if (state.tab === "team") openTeamModal();
+  else if (state.tab === "machines") openMachineModal();
+  else if (state.tab === "defensivos") {
+    if (state.defensivosSubTab === "produtos") openProductModal();
+    else if (state.defensivosSubTab === "pivos") openPivotModal();
+    else if (state.defensivosSubTab === "culturas") openPlantingModal();
+    else if (state.defensivosSubTab === "energia") openEnergyModal();
+    else openApplicationModal("aplicacao");
+  }
+  else if (state.tab === "producao") openHarvestModal();
+  else if (state.tab === "estoque-graos") openSaleModal();
+  else openRefillModal();
+}
+function openFabActionSecondary() {
+  if (state.tab === "defensivos" && state.defensivosSubTab === "aplicacoes") openApplicationModal("plantio");
+}
+function setDefensivosSubTab(sub) {
+  state.defensivosSubTab = sub;
+  setTab("defensivos");
+}
+function setProducaoSubTab(sub) {
+  state.producaoSubTab = sub;
+  setTab("producao");
+}
+function setEstoqueSubTab(sub) {
+  state.estoqueSubTab = sub;
+  setTab("estoque-graos");
+}
+
+/* =========================================================================
+   Render
+   ========================================================================= */
+function render() {
+  renderDashboard();
+  renderRefills();
+  renderMachines();
+  renderDefensivos();
+  renderProducao();
+  renderEstoqueGraos();
+  if (isAdmin()) renderTeam();
+}
+
+function renderUpcomingCards() {
+  let html = "";
+
+  // Aplicações/plantios ainda não marcados como executados — é o
+  // administrador quem cria (um planejamento: "isso precisa ser feito"),
+  // e aparece aqui pra quem for aplicar confirmar quando terminar.
+  const pending = groupApplicationsByBatch(state.applications.filter((a) => !a.executed_at))
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
+  if (pending.length > 0) {
+    html += `<p class="section-label">${pending.length === 1 ? "1 aplicação/plantio pendente" : pending.length + " aplicações/plantios pendentes"}</p><div class="panel">` +
+      pending.map((g) => {
+        const area = g.area_applied_hectares ? Number(g.area_applied_hectares) : null;
+        return `<div class="bar-row">
+          <div class="bar-top">
+            <span>${g.kind === "plantio" ? "🌱 Plantio — " : "💧 "}${escapeHtml(g.pivot_name)}</span>
+            <span class="ff-mono" style="color:var(--yellow);">${fmtDate(g.date)}</span>
+          </div>
+          <p class="hint" style="margin:4px 0 0;">
+            ${area ? `Área: ${fmtNum(area, 1)} ha` : "Área não informada"}
+            ${g.crop ? " · 🌱 " + escapeHtml(g.crop) : ""}
+            ${g.assigned_to ? " · 👤 " + escapeHtml(g.assigned_to) : " · sem responsável definido"}
+          </p>
+          <div style="margin-top:6px; display:flex; flex-direction:column; gap:3px;">
+            ${g.items.map((a) => {
+              const perHa = a.dosage_per_hectare !== null && a.dosage_per_hectare !== undefined ? Number(a.dosage_per_hectare) : (area ? Number(a.dosage_liters) / area : null);
+              return `<p style="font-size:12px; color:var(--text-muted); margin:0;">
+                ${escapeHtml(a.product_name)} —
+                ${perHa !== null ? `<span class="ff-mono">${fmtNum(perHa)} ${escapeHtml(a.product_unit || "L")}/ha</span> · ` : ""}
+                total: <span class="ff-mono">${fmtNum(a.dosage_liters)} ${escapeHtml(a.product_unit || "L")}</span>
+              </p>`;
+            }).join("")}
+          </div>
+          <button type="button" class="small-btn primary" style="margin-top:8px;" onclick="markApplicationExecuted(${g.representativeId})">✓ Marcar como executado</button>
+        </div>`;
+      }).join("") + `</div>`;
+  }
+
+  // Máquinas com troca de óleo vencida ou perto do prazo (motor, hidráulico
+  // ou transmissão, conforme o tipo da máquina).
+  const oilAlerts = computeOilAlerts();
+  if (oilAlerts.length > 0) {
+    html += `<p class="section-label">${oilAlerts.length === 1 ? "1 troca de óleo próxima" : oilAlerts.length + " trocas de óleo próximas"}</p><div class="panel">` +
+      oilAlerts.map((a) => `
+        <div class="bar-row">
+          <div class="bar-top">
+            <span>🛢️ ${escapeHtml(a.m.name)} — ${a.ot.label}</span>
+            <span class="ff-mono" style="color:${a.status.level === "overdue" ? "var(--rust)" : "var(--yellow)"};">${a.status.level === "overdue" ? "Atrasada" : "Perto do prazo"}</span>
+          </div>
+        </div>`).join("") + `</div>`;
+  }
+
+  return html;
+}
+
+async function markApplicationExecuted(id) {
+  if (!confirm("Marcar esta aplicação/plantio como executado? O estoque do(s) produto(s) será descontado agora.")) return;
+  try {
+    await api("/applications/" + id + "/executed", { method: "PUT" });
+    await loadAll();
+  } catch (err) { showBanner(err.message); }
+}
+
+function renderDashboard() {
+  const el = document.getElementById("tab-dashboard");
+
+  // Funcionário vê só a lista de últimos abastecimentos — nada de estoque,
+  // litros totais ou qualquer outro número agregado.
+  if (!isAdmin()) {
+    let html = renderUpcomingCards();
+    html += `<p class="section-label">Últimos abastecimentos</p>`;
+    const recent = state.refills.slice(0, 8);
+    if (recent.length === 0) {
+      html += `<p style="color:var(--text-faint); font-size:13px;">Nenhum abastecimento registrado ainda.</p>`;
+    } else {
+      html += recent.map((r) => refillRowHtml(r, true)).join("");
+    }
+    el.innerHTML = html;
+    return;
+  }
+
+  const stockHtml = renderStockCard();
+
+  if (state.machines.length === 0) {
+    el.innerHTML = renderUpcomingCards() + stockHtml + emptyState("🚜", "Nenhuma máquina cadastrada", "Cadastre um trator, caminhão ou implemento para começar a registrar os abastecimentos.");
+    return;
+  }
+
+  const thisMonth = monthKey(todayISO());
+  const monthRefills = state.refills.filter((r) => monthKey(r.date) === thisMonth);
+  const totalLitersMonth = monthRefills.reduce((s, r) => s + Number(r.liters || 0), 0);
+
+  const litersMap = {};
+  state.refills.forEach((r) => { litersMap[r.machine_id] = (litersMap[r.machine_id] || 0) + Number(r.liters || 0); });
+  const litersByMachine = Object.entries(litersMap)
+    .map(([id, liters]) => ({ machine: state.machines.find((m) => m.id == id), liters }))
+    .filter((x) => x.machine)
+    .sort((a, b) => b.liters - a.liters);
+  const maxLitersByMachine = litersByMachine[0]?.liters || 1;
+
+  const consumptionList = state.machines
+    .map((m) => ({ machine: m, rate: computeConsumption(m.id) }))
+    .filter((x) => x.rate !== null)
+    .sort((a, b) => b.rate - a.rate);
+
+  let html = renderUpcomingCards() + stockHtml + `<div class="stat-grid">
+    <div class="stat-card"><p class="label">Litros no mês</p><p class="value ff-mono">${fmtNum(totalLitersMonth)} <span style="font-size:12px; color:var(--text-muted);">L</span></p></div>
+    <div class="stat-card"><p class="label">Abastecimentos no mês</p><p class="value ff-mono">${monthRefills.length}</p></div>
+  </div>`;
+
+  html += `<p class="section-label">Litros por máquina (total)</p>`;
+  if (litersByMachine.length === 0) {
+    html += `<p style="color:var(--text-faint); font-size:13px;">Nenhum abastecimento registrado ainda.</p>`;
+  } else {
+    html += `<div class="panel">` + litersByMachine.map(({ machine, liters }) => `
+      <div class="bar-row">
+        <div class="bar-top"><span>${iconFor(machine.type)} ${escapeHtml(machine.name)}</span><span class="ff-mono" style="color:var(--yellow);">${fmtNum(liters)} L</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:${Math.max(4, (liters / maxLitersByMachine) * 100)}%;"></div></div>
+      </div>`).join("") + `</div>`;
+  }
+
+  if (consumptionList.length > 0) {
+    html += `<p class="section-label">Consumo médio (L/h)</p><div class="panel">` +
+      consumptionList.map(({ machine, rate }) => `
+        <div class="consumption-row">
+          <span>${iconFor(machine.type)} ${escapeHtml(machine.name)}</span>
+          <span class="ff-mono" style="color:var(--green);">${fmtNum(rate, 2)} L/h</span>
+        </div>`).join("") + `</div>
+      <p class="hint" style="margin:-12px 0 20px;">Calculado a partir das leituras de horímetro registradas em cada abastecimento.</p>`;
+  }
+
+  html += `<p class="section-label">Últimos abastecimentos</p>`;
+  const recent = state.refills.slice(0, 4);
+  if (recent.length === 0) {
+    html += `<p style="color:var(--text-faint); font-size:13px;">Nenhum abastecimento registrado ainda.</p>`;
+  } else {
+    html += recent.map((r) => refillRowHtml(r, true)).join("");
+  }
+
+  el.innerHTML = html;
+}
+
+function renderStockCard() {
+  if (!state.stock) return "";
+  const { liters, threshold, low, lastCostPerLiter, totalInvested } = state.stock;
+  return `<div class="stock-card ${low ? "low" : ""}">
+    <div class="stock-top">
+      <div>
+        <p class="label" style="font-size:12px; color:var(--text-muted); margin:0 0 4px;">Estoque de diesel</p>
+        <p class="stock-liters ff-mono">${fmtNum(liters, 0)} <span class="unit">L</span></p>
+      </div>
+      <span style="font-size:11px; color:var(--text-faint);">alerta em ${fmtNum(threshold, 0)} L</span>
+    </div>
+    ${low ? `<p class="stock-warning">⚠️ Estoque abaixo do limite — registre uma reposição.</p>` : ""}
+    ${isAdmin() && lastCostPerLiter ? `<p class="hint ff-mono" style="margin-top:6px;">Última compra: ${fmtBRL(lastCostPerLiter)}/L · Total investido: ${fmtBRL(totalInvested)}</p>` : ""}
+    ${isAdmin() ? `<div class="stock-actions">
+      <button class="small-btn primary" onclick="openRestockModal()">+ Registrar reposição</button>
+      ${notifStatusHtml()}
+    </div>` : ""}
+  </div>`;
+}
+
+function notifStatusHtml() {
+  if (window.__pushSubscribed) return `<span class="small-btn" style="cursor:default;">🔔 Notificações ativas</span>`;
+  return `<button class="small-btn" onclick="enablePushNotifications()">🔔 Ativar notificações no celular</button>`;
+}
+
+/* =========================================================================
+   Defensivos (produtos, pivôs, aplicações)
+   ========================================================================= */
+function renderDefensivos() {
+  const el = document.getElementById("tab-defensivos");
+  if (!el) return;
+
+  let html = `<div class="sub-tabs">
+    <button class="sub-tab ${state.defensivosSubTab === "produtos" ? "active" : ""}" onclick="setDefensivosSubTab('produtos')">Produtos</button>
+    <button class="sub-tab ${state.defensivosSubTab === "pivos" ? "active" : ""}" onclick="setDefensivosSubTab('pivos')">Pivôs</button>
+    <button class="sub-tab ${state.defensivosSubTab === "culturas" ? "active" : ""}" onclick="setDefensivosSubTab('culturas')">Culturas</button>
+    <button class="sub-tab ${state.defensivosSubTab === "aplicacoes" ? "active" : ""}" onclick="setDefensivosSubTab('aplicacoes')">Aplicações/Plantio</button>
+    ${isAdmin() ? `<button class="sub-tab ${state.defensivosSubTab === "energia" ? "active" : ""}" onclick="setDefensivosSubTab('energia')">Energia</button>` : ""}
+    ${isAdmin() ? `<button class="sub-tab ${state.defensivosSubTab === "custos" ? "active" : ""}" onclick="setDefensivosSubTab('custos')">Custos</button>` : ""}
+  </div>`;
+
+  if (state.defensivosSubTab === "produtos") {
+    html += renderProductsList();
+  } else if (state.defensivosSubTab === "pivos") {
+    html += renderPivotsList();
+  } else if (state.defensivosSubTab === "culturas") {
+    html += renderPlantingsList();
+  } else if (state.defensivosSubTab === "energia" && isAdmin()) {
+    html += renderEnergyList();
+  } else if (state.defensivosSubTab === "custos" && isAdmin()) {
+    html += renderCostsReport();
+  } else {
+    html += renderApplicationsList();
+  }
+
+  el.innerHTML = html;
+}
+
+function latestCropForPivot(pivotId) {
+  const list = state.plantings
+    .filter((pl) => pl.pivot_id == pivotId)
+    .sort((a, b) => (a.planting_date < b.planting_date ? 1 : -1));
+  return list[0] || null;
+}
+
+function renderProductsList() {
+  if (state.products.length === 0) {
+    return emptyState("🧪", "Nenhum defensivo cadastrado", "Toque em “Novo produto” para cadastrar um herbicida, fungicida, inseticida ou adubo.");
+  }
+  return state.products.map((p) => {
+    const catLabel = (PRODUCT_CATEGORIES.find((c) => c.value === p.category) || {}).label || p.category;
+    return `<div class="product-card">
+      <div class="product-top">
+        <div>
+          <p class="product-name">${escapeHtml(p.name)} <span class="category-tag">${escapeHtml(catLabel)}</span></p>
+          ${isAdmin() ? `<p class="product-meta">${fmtBRL(p.cost_per_liter)} / ${escapeHtml(p.unit)}</p>` : ""}
+        </div>
+        ${isAdmin() ? `<button class="del-btn" onclick="deleteProduct(${p.id})" aria-label="Excluir">🗑</button>` : ""}
+      </div>
+      <p class="product-stock ff-mono" style="color:${p.stock_liters <= 0 ? "var(--text-faint)" : "var(--green)"};">
+        Estoque: ${fmtNum(p.stock_liters, 1)} ${escapeHtml(p.unit)}
+      </p>
+      ${isAdmin() ? `<div class="stock-actions"><button class="small-btn" onclick="openProductRestockModal(${p.id})">+ Reposição</button></div>` : ""}
+    </div>`;
+  }).join("");
+}
+
+function renderPivotsList() {
+  if (state.pivots.length === 0) {
+    return emptyState("🌀", "Nenhum pivô cadastrado", "Toque em “Novo pivô” para cadastrar um pivô central.");
+  }
+  return state.pivots.map((p) => {
+    const latest = latestCropForPivot(p.id);
+    return `
+    <div class="product-card">
+      <div class="product-top">
+        <div>
+          <p class="product-name">${p.number ? "Pivô " + escapeHtml(p.number) + " — " : ""}${escapeHtml(p.name)}</p>
+          <p class="product-meta">
+            ${p.area_hectares ? fmtNum(p.area_hectares, 1) + " ha" : "área não informada"}
+            ${latest ? " · cultura atual: " + escapeHtml(latest.crop) : " · sem cultura cadastrada"}
+          </p>
+        </div>
+        <div style="display:flex; gap:4px;">
+          ${isAdmin() ? `<button class="del-btn" onclick="openPivotModal(${p.id})" aria-label="Editar">✏️</button>` : ""}
+          ${isAdmin() ? `<button class="del-btn" onclick="deletePivot(${p.id})" aria-label="Excluir">🗑</button>` : ""}
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function renderPlantingsList() {
+  if (state.plantings.length === 0) {
+    return emptyState("🌱", "Nenhuma cultura cadastrada", "Toque em “Nova cultura” para registrar o plantio de um pivô, com data de plantio e previsão de colheita.");
+  }
+  return state.plantings.map((pl) => `
+    <div class="product-card">
+      <div class="product-top">
+        <div>
+          <p class="product-name">🌱 ${escapeHtml(pl.crop)}</p>
+          <p class="product-meta">${pl.pivot_number ? "Pivô " + escapeHtml(pl.pivot_number) + " — " : ""}${escapeHtml(pl.pivot_name)}</p>
+        </div>
+        ${isAdmin() ? `<button class="del-btn" onclick="deletePlanting(${pl.id})" aria-label="Excluir">🗑</button>` : ""}
+      </div>
+      <p class="product-meta" style="margin-top:6px;">
+        Plantio: ${fmtDate(pl.planting_date)}${pl.expected_harvest_date ? " · Possível colheita: " + fmtDate(pl.expected_harvest_date) : ""}
+      </p>
+    </div>`).join("");
+}
+
+function renderCostsReport() {
+  const plantings = state.plantingCosts.plantings || [];
+  const generalDiesel = state.plantingCosts.generalDiesel || 0;
+
+  if (plantings.length === 0) {
+    return emptyState("📊", "Sem culturas cadastradas", "Cadastre uma cultura na sub-aba “Culturas” (com pivô e data de plantio) para o custo aparecer aqui.")
+      + (generalDiesel > 0 ? generalDieselNote(generalDiesel) : "");
+  }
+
+  const grandTotal = plantings.reduce((s, c) => s + Number(c.total || 0), 0);
+  const totalHaKnown = plantings.reduce((s, c) => s + (c.areaHectares ? Number(c.areaHectares) : 0), 0);
+  const avgCostPerHa = totalHaKnown > 0 ? grandTotal / totalHaKnown : null;
+
+  let summary = `<div class="stat-grid">
+    <div class="stat-card"><p class="label">Custo total (todas as culturas)</p><p class="value ff-mono">${fmtBRL(grandTotal)}</p></div>
+    <div class="stat-card"><p class="label">Custo médio por hectare</p><p class="value ff-mono">${avgCostPerHa !== null ? fmtBRL(avgCostPerHa) : "—"}</p></div>
+  </div>`;
+
+  return summary + plantings.map((c) => `
+    <div class="product-card">
+      <p class="product-name" style="margin-bottom:2px;">🌱 Cultura: ${escapeHtml(c.crop)}</p>
+      <p class="product-meta">${c.pivotNumber ? "Pivô " + escapeHtml(c.pivotNumber) + " — " : ""}${escapeHtml(c.pivotName)}</p>
+      <p class="product-meta" style="margin-top:4px;">
+        Data de plantio: ${fmtDate(c.plantingDate)}<br/>
+        Possível colheita: ${c.expectedHarvestDate ? fmtDate(c.expectedHarvestDate) : "não informada"}
+      </p>
+      <p class="section-label" style="margin:12px 0 6px;">Custo</p>
+      <div class="bar-row" style="margin-bottom:6px;">
+        <div class="bar-top"><span>Sementes</span><span class="ff-mono" style="color:var(--yellow);">${fmtBRL(c.sementes)}</span></div>
+      </div>
+      <div class="bar-row" style="margin-bottom:6px;">
+        <div class="bar-top"><span>Adubos</span><span class="ff-mono" style="color:var(--yellow);">${fmtBRL(c.adubos)}</span></div>
+      </div>
+      <div class="bar-row" style="margin-bottom:6px;">
+        <div class="bar-top"><span>Defensivos</span><span class="ff-mono" style="color:var(--yellow);">${fmtBRL(c.defensivos)}</span></div>
+      </div>
+      <div class="bar-row" style="margin-bottom:6px;">
+        <div class="bar-top"><span>Energia</span><span class="ff-mono" style="color:var(--yellow);">${fmtBRL(c.energia)}</span></div>
+      </div>
+      <div class="bar-row" style="margin-bottom:2px;">
+        <div class="bar-top"><span>Diesel</span><span class="ff-mono" style="color:var(--yellow);">${fmtBRL(c.diesel)}</span></div>
+      </div>
+      <div class="bar-row" style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border);">
+        <div class="bar-top"><span style="font-weight:600;">Total</span><span class="ff-mono" style="color:var(--green); font-weight:600;">${fmtBRL(c.total)}</span></div>
+      </div>
+      <div class="bar-row" style="margin-top:6px;">
+        <div class="bar-top">
+          <span>Custo por hectare</span>
+          <span class="ff-mono" style="color:var(--green);">${c.costPerHectare !== null ? fmtBRL(c.costPerHectare) + " / ha" : "—"}</span>
+        </div>
+        ${c.costPerHectare === null ? `<p class="hint" style="margin-top:2px;">Área do pivô não informada — cadastre em "Pivôs" para calcular.</p>` : `<p class="hint" style="margin-top:2px;">${fmtNum(c.areaHectares, 1)} ha cadastrados nesse pivô.</p>`}
+      </div>
+    </div>
+  `).join("") + (generalDiesel > 0 ? generalDieselNote(generalDiesel) : "");
+}
+
+function generalDieselNote(value) {
+  return `<div class="panel" style="margin-top:4px;">
+    <div class="bar-top"><span>⛽ Diesel de uso geral (não vinculado a nenhum pivô)</span><span class="ff-mono" style="color:var(--yellow);">${fmtBRL(value)}</span></div>
+    <p class="hint" style="margin-top:6px;">Abastecimentos de tratores, caminhões etc. — não entram no custo de nenhuma cultura específica.</p>
+  </div>`;
+}
+
+// Agrupa linhas da mesma "passada" (mesmo batch_id) num só cartão. Linhas
+// sem batch_id (aplicação de um produto só) formam grupo de um item.
+// Reaproveitado tanto no histórico quanto no resumo do painel.
+function groupApplicationsByBatch(list) {
+  const groups = [];
+  const groupByBatch = {};
+  list.forEach((a) => {
+    const key = a.batch_id || "single-" + a.id;
+    if (!groupByBatch[key]) {
+      groupByBatch[key] = { key, items: [], date: a.date, pivot_name: a.pivot_name, pivot_number: a.pivot_number, crop: a.crop, kind: a.kind || "aplicacao", area_applied_hectares: a.area_applied_hectares, assigned_to: a.assigned_to, executed_at: a.executed_at, representativeId: a.id, sortKey: a.created_at || a.date };
+      groups.push(groupByBatch[key]);
+    }
+    groupByBatch[key].items.push(a);
+  });
+  return groups;
+}
+
+function renderApplicationsList() {
+  if (state.applications.length === 0) {
+    return emptyState("💧", "Nenhum lançamento registrado",
+      (state.pivots.length === 0 || state.products.length === 0)
+        ? "Cadastre ao menos um pivô e um produto antes de registrar um plantio ou aplicação."
+        : isAdmin()
+          ? "Toque em “Aplicação” ou “Plantio” aqui embaixo para registrar o primeiro."
+          : "O administrador ainda não registrou nenhuma aplicação ou plantio.");
+  }
+
+  const groups = groupApplicationsByBatch(state.applications);
+
+  let html = `<p class="section-label">Histórico</p>`;
+  html += groups.map((g) => {
+    const total = g.items.reduce((s, a) => s + Number(a.total_cost || 0), 0);
+    const area = g.area_applied_hectares ? Number(g.area_applied_hectares) : null;
+    const costPerHa = area ? total / area : null;
+    const isPlantio = g.kind === "plantio";
+    return `<div class="refill-row">
+      <div class="refill-icon">${isPlantio ? "🌱" : "🌀"}</div>
+      <div class="refill-main">
+        <div class="refill-top">
+          <span>${isPlantio ? "Plantio — " : ""}${escapeHtml(g.pivot_name)}${g.items.length > 1 ? ` · ${g.items.length} itens` : ""}</span>
+          ${isAdmin() ? `<span class="ff-mono" style="color:var(--yellow);">${costPerHa !== null ? fmtBRL(costPerHa) + "/ha" : "—"}</span>` : ""}
+        </div>
+        <div class="refill-meta">
+          <span>${fmtDate(g.date)}</span>
+          ${area ? `<span class="dot"></span><span class="ff-mono">${fmtNum(area, 1)} ha</span>` : ""}
+          ${g.crop ? `<span class="dot"></span><span>🌱 ${escapeHtml(g.crop)}</span>` : ""}
+          ${g.assigned_to ? `<span class="dot"></span><span>👤 ${escapeHtml(g.assigned_to)}</span>` : ""}
+        </div>
+        <p class="hint" style="margin-top:2px; color:${g.executed_at ? "var(--green)" : "var(--yellow)"};">${g.executed_at ? "✓ Executado em " + fmtDate(g.executed_at) : "⏳ Pendente de execução"}</p>
+        ${isAdmin() && area === null ? `<p class="hint" style="margin-top:2px;">Sem área informada — não dá pra calcular custo/ha.</p>` : ""}
+        <div style="margin-top:6px; display:flex; flex-direction:column; gap:4px;">
+          ${g.items.map((a) => {
+            const itemCostPerHa = area ? Number(a.total_cost || 0) / area : null;
+            return `
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+              <span style="color:var(--text-muted);">${escapeHtml(a.product_name)} — <span class="ff-mono">${a.dosage_per_hectare !== null && a.dosage_per_hectare !== undefined ? fmtNum(a.dosage_per_hectare) + " " + escapeHtml(a.product_unit || "L") + "/ha" : fmtNum(a.dosage_liters) + " " + escapeHtml(a.product_unit || "L")}</span></span>
+              <span style="display:flex; align-items:center; gap:6px;">
+                ${isAdmin() ? `<span class="ff-mono" style="color:var(--text-faint);">${itemCostPerHa !== null ? fmtBRL(itemCostPerHa) + "/ha" : "—"}</span>` : ""}
+                ${isAdmin() ? `<button class="del-btn" style="padding:2px;" onclick="deleteApplication(${a.id})" aria-label="Excluir produto">🗑</button>` : ""}
+              </span>
+            </div>`;
+          }).join("")}
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+
+  return html;
+}
+
+/* =========================================================================
+   Produção por pivô (cargas de colheita)
+   ========================================================================= */
+const BAG_KG = 60;
+
+function renderProducao() {
+  const el = document.getElementById("tab-producao");
+  if (!el) return;
+
+  let html = `<div class="sub-tabs">
+    <button class="sub-tab ${state.producaoSubTab === "cargas" ? "active" : ""}" onclick="setProducaoSubTab('cargas')">Cargas</button>
+    <button class="sub-tab ${state.producaoSubTab === "produtividade" ? "active" : ""}" onclick="setProducaoSubTab('produtividade')">Produtividade</button>
+  </div>`;
+
+  if (state.producaoSubTab === "produtividade") {
+    html += renderProductivityReport();
+  } else {
+    html += renderHarvestList();
+  }
+
+  el.innerHTML = html;
+}
+
+function renderHarvestList() {
+  if (state.harvestLoads.length === 0) {
+    return emptyState("🌾", "Nenhuma carga registrada",
+      state.plantings.length === 0
+        ? "Cadastre uma cultura em “Custos Pivôs → Culturas” antes de registrar a produção."
+        : "Toque em “Nova carga” para registrar a primeira.");
+  }
+  return state.harvestLoads.map((h) => {
+    const hasPhotos = h.has_photo_gross || h.has_photo_tare;
+    const kinds = JSON.stringify(
+      [h.has_photo_gross && { kind: "gross", label: "Peso bruto" }, h.has_photo_tare && { kind: "tare", label: "Tara" }].filter(Boolean)
+    );
+    return `<div class="refill-row">
+      <div class="refill-icon">🌾</div>
+      <div class="refill-main">
+        <div class="refill-top">
+          <span>${h.crop ? "🌱 " + escapeHtml(h.crop) : "Sem cultura"}</span>
+          <span class="ff-mono" style="color:var(--yellow);">${fmtNum(h.bags_60kg, 1)} sc</span>
+        </div>
+        <div class="refill-meta">
+          <span>${fmtDate(h.date)}</span><span class="dot"></span>
+          <span class="ff-mono">${fmtNum(h.net_weight_kg, 0)} kg líq.</span><span class="dot"></span>
+          <span>${h.pivot_number ? "Pivô " + escapeHtml(h.pivot_number) + " — " : ""}${escapeHtml(h.pivot_name)}</span>
+          ${h.operator ? `<span class="dot"></span><span>${escapeHtml(h.operator)}</span>` : ""}
+        </div>
+        ${hasPhotos ? `<button class="refill-photo-link" onclick='openPhotoViewer("production", ${h.id}, ${kinds})'>📷 ver fotos</button>` : ""}
+      </div>
+      ${isAdmin() ? `<button class="del-btn" onclick="deleteHarvestLoad(${h.id})" aria-label="Excluir">🗑</button>` : ""}
+    </div>`;
+  }).join("");
+}
+
+function renderProductivityReport() {
+  if (state.plantings.length === 0) {
+    return emptyState("📈", "Nenhuma cultura cadastrada ainda",
+      "Cadastre uma cultura em “Custos Pivôs → Culturas” — ela já aparece aqui na hora, mesmo antes de lançar qualquer carga. As cargas de colheita entram sozinhas aqui conforme forem registradas.");
+  }
+
+  const sorted = [...state.plantings].sort((a, b) => (a.planting_date < b.planting_date ? 1 : -1));
+  const bagsFor = (plantingId) =>
+    state.harvestLoads.filter((h) => h.planting_id == plantingId).reduce((s, h) => s + Number(h.bags_60kg || 0), 0);
+  const maxBags = Math.max(1, ...sorted.map((pl) => bagsFor(pl.id)));
+
+  let html = `<p class="section-label">Produtividade por ciclo de plantio</p><div class="panel">` +
+    sorted.map((pl) => {
+      const bags = bagsFor(pl.id);
+      const pivot = state.pivots.find((p) => p.id == pl.pivot_id);
+      const ha = pivot?.area_hectares ? Number(pivot.area_hectares) : null;
+      const bagsPerHa = ha ? bags / ha : null;
+      return `<div class="bar-row">
+        <div class="bar-top">
+          <span>🌱 ${escapeHtml(pl.crop)} <span style="color:var(--text-faint); font-weight:400;">— ${pl.pivot_number ? "Pivô " + escapeHtml(pl.pivot_number) + " — " : ""}${escapeHtml(pl.pivot_name)}</span></span>
+          <span class="ff-mono" style="color:var(--yellow);">${fmtNum(bags, 1)} sc</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width:${Math.max(4, (bags / maxBags) * 100)}%;"></div></div>
+        <p class="hint" style="margin:4px 0 0;">
+          ${fmtDate(pl.planting_date)} → ${pl.expected_harvest_date ? fmtDate(pl.expected_harvest_date) : "colheita não definida"}
+          ${bagsPerHa !== null ? " · " + fmtNum(bagsPerHa, 1) + " sc/ha (" + fmtNum(ha, 1) + " ha)" : " · área do pivô não informada"}
+        </p>
+      </div>`;
+    }).join("") + `</div>`;
+
+  const orphanBags = state.harvestLoads.filter((h) => !h.planting_id).reduce((s, h) => s + Number(h.bags_60kg || 0), 0);
+  if (orphanBags > 0) {
+    html += `<p class="hint" style="margin-top:10px;">+ ${fmtNum(orphanBags, 1)} sc em cargas sem cultura vinculada (lançadas antes de existir uma cultura cadastrada naquele pivô, na data da carga).</p>`;
+  }
+
+  return html;
+}
+
+/* =========================================================================
+   Estoque de grãos e vendas
+   ========================================================================= */
+function renderEstoqueGraos() {
+  const el = document.getElementById("tab-estoque-graos");
+  if (!el) return;
+
+  let html = `<div class="sub-tabs">
+    ${isAdmin() ? `<button class="sub-tab ${state.estoqueSubTab === "resumo" ? "active" : ""}" onclick="setEstoqueSubTab('resumo')">Resumo</button>` : ""}
+    <button class="sub-tab ${state.estoqueSubTab === "vendas" ? "active" : ""}" onclick="setEstoqueSubTab('vendas')">Vendas</button>
+  </div>`;
+
+  if (state.estoqueSubTab === "resumo" && isAdmin()) {
+    html += renderGrainSummary();
+  } else {
+    html += renderSalesList();
+  }
+
+  el.innerHTML = html;
+}
+
+function renderGrainSummary() {
+  const totalReceived = state.sales.filter((s) => s.paid).reduce((s, v) => s + Number(v.total_value || 0), 0);
+  const totalPending = state.sales.filter((s) => !s.paid).reduce((s, v) => s + Number(v.total_value || 0), 0);
+  const gs = state.grainStock || { grains: [], unassigned: { produced: 0, sold: 0, bagsInStock: 0 } };
+
+  let html = `
+    <div class="stat-grid">
+      <div class="stat-card"><p class="label">Total recebido</p><p class="value ff-mono" style="color:var(--green);">${fmtBRL(totalReceived)}</p></div>
+      <div class="stat-card"><p class="label">A receber</p><p class="value ff-mono" style="color:var(--rust);">${fmtBRL(totalPending)}</p></div>
+    </div>
+    <p class="section-label" style="margin-top:14px;">Estoque por tipo de grão</p>`;
+
+  if (gs.grains.length === 0) {
+    html += emptyState("🌾", "Nenhum grão em estoque ainda", "Assim que houver produção (Entradas) de alguma cultura, o estoque daquele grão aparece aqui.");
+  } else {
+    html += `<div class="panel">` + gs.grains.map((g) => `
+      <div class="bar-row">
+        <div class="bar-top">
+          <span>🌱 ${escapeHtml(g.crop)}</span>
+          <span class="ff-mono" style="color:var(--green);">${fmtNum(g.bagsInStock, 1)} sc</span>
+        </div>
+        <p class="hint" style="margin:4px 0 0;">Produzido: ${fmtNum(g.produced, 1)} sc · Vendido: ${fmtNum(g.sold, 1)} sc</p>
+      </div>`).join("") + `</div>`;
+  }
+
+  if (gs.unassigned && (gs.unassigned.produced > 0 || gs.unassigned.sold > 0)) {
+    html += `<p class="hint" style="margin-top:10px;">+ ${fmtNum(gs.unassigned.bagsInStock, 1)} sc sem tipo de grão definido (de antes dessa mudança).</p>`;
+  }
+
+  return html;
+}
+
+function renderSalesList() {
+  if (state.sales.length === 0) {
+    return emptyState("🚚", "Nenhuma venda registrada", "Toque em “Nova venda” para registrar a primeira carga vendida.");
+  }
+  return state.sales.map((s) => {
+    const hasPhotos = s.has_photo_gross || s.has_photo_tare || s.has_photo_plate;
+    const kinds = JSON.stringify(
+      [
+        s.has_photo_gross && { kind: "gross", label: "Peso bruto" },
+        s.has_photo_tare && { kind: "tare", label: "Tara" },
+        s.has_photo_plate && { kind: "plate", label: "Placa do veículo" },
+      ].filter(Boolean)
+    );
+    return `<div class="refill-row">
+      <div class="refill-icon">🚚</div>
+      <div class="refill-main">
+        <div class="refill-top">
+          <span>${escapeHtml(s.vehicle_plate || "Sem placa")} ${isAdmin() ? `<span class="paid-tag ${s.paid ? "yes" : "no"}">${s.paid ? "Pago" : "Pendente"}</span>` : ""}</span>
+          ${isAdmin() ? `<span class="ff-mono" style="color:var(--yellow);">${fmtBRL(s.total_value)}</span>` : ""}
+        </div>
+        <div class="refill-meta">
+          <span>${fmtDate(s.date)}</span><span class="dot"></span>
+          <span class="ff-mono">${fmtNum(s.bags_60kg, 1)} sc</span><span class="dot"></span>
+          <span class="ff-mono">${fmtBRL(s.price_per_bag)}/sc</span>
+          ${s.crop ? `<span class="dot"></span><span>🌱 ${escapeHtml(s.crop)}</span>` : ""}
+          ${s.operator ? `<span class="dot"></span><span>${escapeHtml(s.operator)}</span>` : ""}
+        </div>
+        <div style="display:flex; gap:10px; align-items:center; margin-top:4px;">
+          ${hasPhotos ? `<button class="refill-photo-link" style="padding:0;" onclick='openPhotoViewer("sales", ${s.id}, ${kinds})'>📷 ver fotos</button>` : ""}
+          ${isAdmin() ? `<button class="refill-photo-link" style="padding:0;" onclick="toggleSalePaid(${s.id}, ${!s.paid})">${s.paid ? "Marcar como pendente" : "Marcar como pago"}</button>` : ""}
+        </div>
+      </div>
+      ${isAdmin() ? `<button class="del-btn" onclick="deleteSale(${s.id})" aria-label="Excluir">🗑</button>` : ""}
+    </div>`;
+  }).join("");
+}
+
+function refillRowHtml(r, compact) {
+  const machine = state.machines.find((m) => m.id == r.machine_id);
+  const unit = readingUnitLabel(machine?.type);
+  const readingLabel = usesOdometer(machine?.type) ? "Odômetro" : "Horímetro";
+  const hasPhotos = r.has_photo_liters || r.has_photo_hourmeter;
+  return `<div class="refill-row">
+    <div class="refill-icon">${iconFor(machine?.type)}</div>
+    <div class="refill-main">
+      <div class="refill-top">
+        <span>${escapeHtml(machine ? machine.name : "Máquina removida")}</span>
+        <span class="ff-mono" style="color:var(--yellow);">${fmtNum(r.liters)} L</span>
+      </div>
+      <div class="refill-meta">
+        <span>${fmtDate(r.date)}</span>
+        ${r.fuel_type ? `<span class="dot"></span><span>${escapeHtml(r.fuel_type)}</span>` : ""}
+        ${!compact && r.pivot_name ? `<span class="dot"></span><span>🌀 ${r.pivot_number ? "Pivô " + escapeHtml(r.pivot_number) : escapeHtml(r.pivot_name)}</span>` : ""}
+        ${!compact && r.hourmeter ? `<span class="dot"></span><span class="ff-mono">${fmtNum(r.hourmeter, 0)} ${unit}</span>` : ""}
+        ${!compact && r.operator ? `<span class="dot"></span><span>${escapeHtml(r.operator)}</span>` : ""}
+      </div>
+      ${!compact && r.created_by_name ? `<p class="hint" style="margin-top:2px;">Lançado por: ${escapeHtml(r.created_by_name)}</p>` : ""}
+      ${!compact && hasPhotos ? `<button class="refill-photo-link" onclick='openPhotoViewer("refills", ${r.id}, ${JSON.stringify([r.has_photo_liters && { kind: "liters", label: "Painel / litros" }, r.has_photo_hourmeter && { kind: "hourmeter", label: readingLabel }].filter(Boolean))})'>📷 ver fotos</button>` : ""}
+    </div>
+    ${!compact && isAdmin() ? `<button class="del-btn" onclick="deleteRefill(${r.id})" aria-label="Excluir">🗑</button>` : ""}
+  </div>`;
+}
+
+function renderRefills() {
+  const el = document.getElementById("tab-refills");
+  let html = "";
+
+  if (state.machines.length > 0) {
+    html += `<div class="chip-row">
+      <button class="chip ${state.filterMachine === "all" ? "active" : ""}" onclick="setFilterMachine('all')">Todas</button>
+      ${state.machines.map((m) => `<button class="chip ${state.filterMachine == m.id ? "active" : ""}" onclick="setFilterMachine('${m.id}')">${escapeHtml(m.name)}</button>`).join("")}
+    </div>`;
+  }
+
+  const filtered = state.filterMachine === "all" ? state.refills : state.refills.filter((r) => r.machine_id == state.filterMachine);
+
+  if (filtered.length === 0) {
+    html += emptyState("💧", "Nenhum abastecimento",
+      state.machines.length === 0
+        ? "Cadastre uma máquina na aba “Máquinas” antes de registrar um abastecimento."
+        : "Toque em “Novo abastecimento” para registrar o primeiro.");
+  } else {
+    html += filtered.map((r) => refillRowHtml(r, false)).join("");
+  }
+
+  el.innerHTML = html;
+}
+function setFilterMachine(id) {
+  state.filterMachine = id;
+  renderRefills();
+}
+
+function renderMachines() {
+  const el = document.getElementById("tab-machines");
+  if (state.machines.length === 0) {
+    el.innerHTML = emptyState("🚜", "Nenhuma máquina cadastrada", "Cadastre tratores, caminhões, colheitadeiras ou implementos para começar.");
+    return;
+  }
+
+  const alerts = computeOilAlerts();
+
+  let html = "";
+  if (alerts.length > 0) {
+    html += `<div class="banner error wrap" style="margin:0 0 12px;">
+      🛢️ ${alerts.length === 1 ? "1 troca de óleo está" : alerts.length + " trocas de óleo estão"} vencida(s) ou perto de vencer:
+      ${alerts.map((a) => escapeHtml(a.m.name) + " (" + a.ot.label.replace("Óleo do ", "").replace("Óleo ", "") + ")").join(", ")}.
+    </div>`;
+  }
+
+  const oilColors = { ok: "var(--green)", soon: "var(--yellow)", overdue: "var(--rust)", none: "var(--text-faint)" };
+  const oilLabels = { ok: "Em dia", soon: "Perto do prazo", overdue: "Troca atrasada", none: "Sem registro" };
+
+  html += `<div class="machine-grid">` + state.machines.map((m) => {
+    const last = state.refills.filter((r) => r.machine_id == m.id).sort((a, b) => (a.date < b.date ? 1 : -1))[0];
+    const rate = computeConsumption(m.id);
+    const unit = readingUnitLabel(m.type);
+    const oilTypes = applicableOilTypes(m.type);
+
+    return `<div class="machine-card">
+      <div class="rivet" style="top:6px; left:6px;"></div><div class="rivet" style="top:6px; right:6px;"></div>
+      <div class="rivet" style="bottom:6px; left:6px;"></div><div class="rivet" style="bottom:6px; right:6px;"></div>
+      <div class="machine-top">
+        <div style="display:flex; gap:8px; align-items:flex-start;">
+          <span style="font-size:16px;">${iconFor(m.type)}</span>
+          <div>
+            <p class="machine-name">${escapeHtml(m.name.toUpperCase())}</p>
+            <p class="machine-type">${labelFor(m.type)}${m.identifier ? " · " + escapeHtml(m.identifier) : ""}</p>
+          </div>
+        </div>
+        <div style="display:flex; gap:4px;">
+          <button class="del-btn ${isAdmin() ? "" : "hidden"}" onclick="openMachineModal(${m.id})" aria-label="Editar" style="color:var(--text-muted);">✏️</button>
+          <button class="del-btn ${isAdmin() ? "" : "hidden"}" onclick="deleteMachine(${m.id})" aria-label="Remover">🗑</button>
+        </div>
+      </div>
+      <div class="machine-plate">
+        <span class="k">ÚLT. ABASTECIMENTO</span>
+        <span class="v ff-mono">${last ? fmtDate(last.date) + " · " + fmtNum(last.liters) + " L" : "sem registro"}</span>
+      </div>
+      ${rate !== null ? `<div class="machine-consumption"><span style="color:var(--text-faint); letter-spacing:0.05em;">CONSUMO MÉDIO</span><span class="ff-mono" style="color:var(--green);">${fmtNum(rate, 2)} L/${unit}</span></div>` : ""}
+
+      ${oilTypes.map((ot) => {
+        const oil = oilStatusFor(m, ot.value);
+        return `<div class="machine-plate" style="margin-top:8px;">
+          <span class="k">${ot.label.toUpperCase()}</span>
+          <span class="v ff-mono" style="color:${oilColors[oil.level]};">${oilLabels[oil.level]}</span>
+        </div>
+        <p class="hint" style="margin:2px 0 8px;">
+          ${oil.last
+            ? `Última: ${fmtDate(oil.last.date)} · ${fmtNum(Number(oil.last.reading), 0)} ${unit}` +
+              (oil.currentReading !== null ? ` (${fmtNum(oil.currentReading - Number(oil.last.reading), 0)} ${unit} / ${fmtNum(oil.monthsSince, 1)} meses desde então)` : ` (${fmtNum(oil.monthsSince, 1)} meses desde então)`)
+            : `Nenhuma troca registrada ainda. Alerta em ${fmtNum(oil.interval.usage, 0)} ${unit} ou ${oil.interval.months} meses.`}
+        </p>
+        <div style="display:flex; gap:8px; margin-bottom:4px;">
+          <button type="button" class="small-btn" onclick="openOilChangeModal(${m.id}, '${ot.value}')">+ Registrar ${ot.label.toLowerCase()}</button>
+          ${isAdmin() && oil.last ? `<button class="del-btn" onclick="deleteOilChange(${oil.last.id})" aria-label="Excluir última troca">🗑</button>` : ""}
+        </div>`;
+      }).join("")}
+    </div>`;
+  }).join("") + `</div>`;
+
+  el.innerHTML = html;
+}
+
+function renderTeam() {
+  const el = document.getElementById("tab-team");
+  if (!el) return;
+
+  let html = `<p class="section-label">Usuários do app</p>`;
+  if (state.team.length === 0) {
+    html += emptyState("👥", "Nenhuma conta cadastrada", "Toque em “Novo usuário” para adicionar alguém da equipe.");
+  } else {
+    html += state.team.map((u) => `
+      <div class="team-row">
+        <div>
+          <p class="name">${escapeHtml(u.name)} <span class="role-badge ${u.role}">${u.role === "admin" ? "Admin" : "Funcionário"}</span></p>
+          <p class="email">${escapeHtml(u.email)}</p>
+        </div>
+        ${u.id != state.user.id ? `<button class="del-btn" onclick="deleteTeamMember(${u.id})" aria-label="Remover">🗑</button>` : ""}
+      </div>`).join("");
+  }
+
+  html += `<p class="section-label" style="margin-top:16px;">Funcionários de campo</p>
+    <p class="hint" style="margin:-4px 0 8px;">Cadastro simples, só com nome — sem login. Usado pra atribuir quem vai executar cada aplicação/plantio.</p>`;
+  if (state.fieldWorkers.length === 0) {
+    html += emptyState("🧑‍🌾", "Nenhum funcionário de campo cadastrado", "Toque em “+ Adicionar funcionário” para cadastrar o primeiro.");
+  } else {
+    html += state.fieldWorkers.map((w) => `
+      <div class="team-row">
+        <div><p class="name">${escapeHtml(w.name)}</p></div>
+        <button class="del-btn" onclick="deleteFieldWorker(${w.id})" aria-label="Remover">🗑</button>
+      </div>`).join("");
+  }
+  html += `<button type="button" class="small-btn" style="margin-top:8px;" onclick="openFieldWorkerModal()">+ Adicionar funcionário</button>`;
+
+  el.innerHTML = html;
+}
+
+function openFieldWorkerModal() {
+  const body = `
+    <form id="field-worker-form">
+      <div class="field-gap" style="margin-bottom:12px;">
+        <label>Nome<input type="text" id="fw-name" placeholder="Ex.: João Silva" required /></label>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;">SALVAR →</button>
+    </form>`;
+  document.getElementById("modal-root").innerHTML = modalShell("Novo funcionário de campo", body);
+
+  document.getElementById("field-worker-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      await api("/field-workers", { method: "POST", body: JSON.stringify({ name: document.getElementById("fw-name").value }) });
+      closeModal();
+      await loadAll();
+    } catch (err) { showBanner(err.message); }
+  });
+}
+
+async function deleteFieldWorker(id) {
+  if (!confirm("Remover este funcionário de campo?")) return;
+  try {
+    await api("/field-workers/" + id, { method: "DELETE" });
+    await loadAll();
+  } catch (err) { showBanner(err.message); }
+}
+
+function renderEnergyList() {
+  if (state.energyEntries.length === 0) {
+    return emptyState("⚡", "Nenhum lançamento de energia", "Toque em “Novo lançamento” para registrar o custo mensal de demanda e consumo.");
+  }
+  return state.energyEntries.map((e) => `
+    <div class="refill-row">
+      <div class="refill-icon">⚡</div>
+      <div class="refill-main">
+        <div class="refill-top">
+          <span>${e.pivot_name ? (e.pivot_number ? "Pivô " + escapeHtml(e.pivot_number) + " — " : "") + escapeHtml(e.pivot_name) : "Geral (sem pivô)"}</span>
+          <span class="ff-mono" style="color:var(--yellow);">${fmtBRL(e.total_cost)}</span>
+        </div>
+        <div class="refill-meta">
+          <span>${fmtMonth(e.reference_month)}</span><span class="dot"></span>
+          <span class="ff-mono">Demanda: ${fmtBRL(e.demand_cost)}</span><span class="dot"></span>
+          <span class="ff-mono">Consumo: ${fmtBRL(e.consumption_cost)}</span>
+        </div>
+        ${e.note ? `<p class="hint" style="margin-top:4px;">${escapeHtml(e.note)}</p>` : ""}
+      </div>
+      <button class="del-btn" onclick="deleteEnergyEntry(${e.id})" aria-label="Excluir">🗑</button>
+    </div>`).join("");
+}
+function fmtMonth(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  return d.toLocaleDateString("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" });
+}
+
+function emptyState(icon, title, text) {
+  return `<div class="empty-state">
+    <div class="icon">${icon}</div>
+    <p class="title ff-display">${escapeHtml(title)}</p>
+    <p class="text">${escapeHtml(text)}</p>
+  </div>`;
+}
+
+/* =========================================================================
+   Ações — excluir
+   ========================================================================= */
+async function deleteMachine(id) {
+  if (!confirm("Remover esta máquina? Os abastecimentos ligados a ela também serão apagados.")) return;
+  try {
+    await api("/machines/" + id, { method: "DELETE" });
+    await loadAll();
+  } catch (err) { showBanner(err.message); }
+}
+
+function openOilChangeModal(machineId, oilType) {
+  const machine = state.machines.find((m) => m.id == machineId);
+  if (!machine) return;
+  const type = oilType || "motor";
+  const oilTypeLabel = (OIL_TYPES.find((t) => t.value === type) || OIL_TYPES[0]).label;
+  const unit = readingUnitLabel(machine.type);
+  const isOdo = usesOdometer(machine.type);
+  const currentReading = lastReadingForMachine(machineId);
+
+  const body = `
+    <form id="oil-change-form">
+      <div class="field-gap" style="margin-bottom:12px;">
+        <p class="hint" style="margin:-4px 0 4px;">${escapeHtml(machine.name)} — ${oilTypeLabel.toLowerCase()} — alerta a cada ${isOdo ? "10.000 km" : "500 h"} ou 6 meses.</p>
+        <label>Data<input type="date" id="oc-date" value="${todayISO()}" required /></label>
+        <label>${isOdo ? "Odômetro (km)" : "Horímetro (horas)"} no momento da troca
+          <input type="number" id="oc-reading" class="ff-mono" min="0" step="0.01" placeholder="${currentReading !== null ? fmtNum(currentReading, 0) : "ex.: 1240"}" required />
+        </label>
+        ${currentReading !== null ? `<p class="hint" style="margin-top:-6px;">Última leitura registrada num abastecimento: ${fmtNum(currentReading, 0)} ${unit}.</p>` : ""}
+        <label>Observações (opcional)<textarea id="oc-notes" rows="2" placeholder="Ex.: filtro trocado junto, óleo usado"></textarea></label>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;">SALVAR ${oilTypeLabel.toUpperCase()} →</button>
+    </form>`;
+  document.getElementById("modal-root").innerHTML = modalShell(oilTypeLabel, body);
+
+  document.getElementById("oil-change-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      await api("/oil-changes", {
+        method: "POST",
+        body: JSON.stringify({
+          machineId,
+          oilType: type,
+          date: document.getElementById("oc-date").value,
+          reading: Number(document.getElementById("oc-reading").value),
+          notes: document.getElementById("oc-notes").value,
+        }),
+      });
+      closeModal();
+      await loadAll();
+    } catch (err) { showBanner(err.message); }
+  });
+}
+
+async function deleteOilChange(id) {
+  if (!confirm("Excluir este registro de troca de óleo?")) return;
+  try {
+    await api("/oil-changes/" + id, { method: "DELETE" });
+    await loadAll();
+  } catch (err) { showBanner(err.message); }
+}
+
+async function deleteRefill(id) {
+  if (!confirm("Excluir este abastecimento?")) return;
+  try {
+    await api("/refills/" + id, { method: "DELETE" });
+    await loadAll();
+  } catch (err) { showBanner(err.message); }
+}
+async function deleteTeamMember(id) {
+  if (!confirm("Remover o acesso desta pessoa?")) return;
+  try {
+    await api("/users/" + id, { method: "DELETE" });
+    await loadAll();
+  } catch (err) { showBanner(err.message); }
+}
+async function deleteProduct(id) {
+  if (!confirm("Excluir este produto? O histórico de aplicações ligado a ele também será apagado.")) return;
+  try {
+    await api("/products/" + id, { method: "DELETE" });
+    await loadAll();
+  } catch (err) { showBanner(err.message); }
+}
+async function deletePivot(id) {
+  if (!confirm("Excluir este pivô? O histórico de aplicações ligado a ele também será apagado.")) return;
+  try {
+    await api("/pivots/" + id, { method: "DELETE" });
+    await loadAll();
+  } catch (err) { showBanner(err.message); }
+}
+async function deletePlanting(id) {
+  if (!confirm("Excluir esta cultura?")) return;
+  try {
+    await api("/plantings/" + id, { method: "DELETE" });
+    await loadAll();
+  } catch (err) { showBanner(err.message); }
+}
+async function deleteEnergyEntry(id) {
+  if (!confirm("Excluir este lançamento de energia?")) return;
+  try {
+    await api("/energy/" + id, { method: "DELETE" });
+    await loadAll();
+  } catch (err) { showBanner(err.message); }
+}
+async function deleteApplication(id) {
+  if (!confirm("Excluir esta aplicação? O estoque do produto será estornado.")) return;
+  try {
+    await api("/applications/" + id, { method: "DELETE" });
+    await loadAll();
+  } catch (err) { showBanner(err.message); }
+}
+async function deleteHarvestLoad(id) {
+  if (!confirm("Excluir esta carga? O estoque de grãos será estornado.")) return;
+  try {
+    await api("/production/" + id, { method: "DELETE" });
+    await loadAll();
+  } catch (err) { showBanner(err.message); }
+}
+async function deleteSale(id) {
+  if (!confirm("Excluir esta venda? O estoque de grãos será estornado.")) return;
+  try {
+    await api("/sales/" + id, { method: "DELETE" });
+    await loadAll();
+  } catch (err) { showBanner(err.message); }
+}
+async function toggleSalePaid(id, paid) {
+  try {
+    await api("/sales/" + id + "/paid", { method: "PUT", body: JSON.stringify({ paid }) });
+    await loadAll();
+  } catch (err) { showBanner(err.message); }
+}
+
+/* =========================================================================
+   Modais — Novo abastecimento / Nova máquina
+   ========================================================================= */
+function closeModal() {
+  document.getElementById("modal-root").innerHTML = "";
+}
+
+function openRefillModal() {
+  if (state.machines.length === 0) {
+    document.getElementById("modal-root").innerHTML = modalShell("Novo abastecimento",
+      `<p style="font-size:14px; color:var(--text-muted);">Cadastre uma máquina primeiro, na aba "Máquinas".</p>`);
+    return;
+  }
+  if (state.fieldWorkers.length === 0) {
+    document.getElementById("modal-root").innerHTML = modalShell("Novo abastecimento",
+      `<p style="font-size:14px; color:var(--text-muted);">Cadastre ao menos um funcionário de campo primeiro, em "Equipe" → "Funcionários de campo".</p>`);
+    return;
+  }
+  const machineOptions = state.machines.map((m) => `<option value="${m.id}">${escapeHtml(m.name)}</option>`).join("");
+  const fuelOptions = FUEL_TYPES.map((f) => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join("");
+  const workerOptions = state.fieldWorkers.map((w) => `<option value="${escapeHtml(w.name)}">${escapeHtml(w.name)}</option>`).join("");
+
+  const body = `
+    <form id="refill-form">
+      <div class="field-gap" style="margin-bottom:12px;">
+        <label>Máquina<select id="rf-machine">${machineOptions}</select></label>
+
+        <div class="grid2">
+          <label>Data<input type="date" id="rf-date" value="${todayISO()}" required /></label>
+          <label>Combustível<select id="rf-fuel">${fuelOptions}</select></label>
+        </div>
+        <label>Litros<input type="number" id="rf-liters" class="ff-mono" min="0" step="0.01" placeholder="0,0" required /></label>
+        <label><span id="rf-hourmeter-label-text">Horímetro (opcional)</span><input type="number" id="rf-hourmeter" class="ff-mono" step="0.01" placeholder="ex.: 1240" /></label>
+        <label>Pivô (opcional)
+          <select id="rf-pivot">
+            <option value="">Uso geral (não vinculado a um pivô)</option>
+            ${state.pivots.map((p) => `<option value="${p.id}">${p.number ? "Pivô " + escapeHtml(p.number) + " — " : ""}${escapeHtml(p.name)}</option>`).join("")}
+          </select>
+        </label>
+        <p class="hint">Se esse diesel foi usado num motor de irrigação de um pivô específico, selecione-o — isso entra no custo daquela cultura. Deixe "uso geral" para tratores, caminhões etc.</p>
+        <label>Funcionário que abasteceu<select id="rf-operator">${workerOptions}</select></label>
+        <label>Observações (opcional)<textarea id="rf-notes" rows="2" placeholder="Ex.: posto, nota fiscal, ocorrência"></textarea></label>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;">SALVAR ABASTECIMENTO →</button>
+    </form>`;
+
+  document.getElementById("modal-root").innerHTML = modalShell("Novo abastecimento", body);
+
+  const litersEl = document.getElementById("rf-liters");
+  const machineEl = document.getElementById("rf-machine");
+
+  function updateReadingLabels() {
+    const machine = state.machines.find((m) => m.id == machineEl.value);
+    const isOdo = machine && usesOdometer(machine.type);
+    document.getElementById("rf-hourmeter-label-text").textContent = isOdo ? "Odômetro, em km (opcional)" : "Horímetro, em horas (opcional)";
+    document.getElementById("rf-hourmeter").placeholder = isOdo ? "ex.: 85000" : "ex.: 1240";
+  }
+  machineEl.addEventListener("change", updateReadingLabels);
+  updateReadingLabels();
+
+  document.getElementById("refill-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const payload = {
+      machineId: document.getElementById("rf-machine").value,
+      date: document.getElementById("rf-date").value,
+      liters: Number(litersEl.value),
+      hourmeter: document.getElementById("rf-hourmeter").value ? Number(document.getElementById("rf-hourmeter").value) : null,
+      fuelType: document.getElementById("rf-fuel").value,
+      pivotId: document.getElementById("rf-pivot").value || null,
+      operator: document.getElementById("rf-operator").value,
+      notes: document.getElementById("rf-notes").value,
+    };
+    try {
+      await api("/refills", { method: "POST", body: JSON.stringify(payload) });
+      closeModal();
+      await loadAll();
+    } catch (err) { showBanner(err.message); }
+  });
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("Não foi possível ler a foto."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function openMachineModal(machineId) {
+  const editing = machineId ? state.machines.find((m) => m.id == machineId) : null;
+  const typeOptions = MACHINE_TYPES.map((t) => `<option value="${t.value}" ${editing && editing.type === t.value ? "selected" : ""}>${t.label}</option>`).join("");
+  const body = `
+    <form id="machine-form">
+      <div class="field-gap" style="margin-bottom:12px;">
+        <label>Nome<input type="text" id="mf-name" placeholder="Ex.: Trator Massey 275" value="${editing ? escapeHtml(editing.name) : ""}" required /></label>
+        <label>Tipo<select id="mf-type">${typeOptions}</select></label>
+        <label>Placa / identificação (opcional)<input type="text" id="mf-identifier" placeholder="Ex.: placa ou nº de patrimônio" value="${editing && editing.identifier ? escapeHtml(editing.identifier) : ""}" /></label>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;">${editing ? "SALVAR ALTERAÇÕES" : "SALVAR MÁQUINA"} →</button>
+    </form>`;
+  document.getElementById("modal-root").innerHTML = modalShell(editing ? "Editar máquina" : "Nova máquina", body);
+
+  document.getElementById("machine-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const payload = {
+      name: document.getElementById("mf-name").value,
+      type: document.getElementById("mf-type").value,
+      identifier: document.getElementById("mf-identifier").value,
+    };
+    try {
+      if (editing) {
+        await api("/machines/" + editing.id, { method: "PUT", body: JSON.stringify(payload) });
+      } else {
+        await api("/machines", { method: "POST", body: JSON.stringify(payload) });
+      }
+      closeModal();
+      await loadAll();
+    } catch (err) { showBanner(err.message); }
+  });
+}
+
+function openTeamModal() {
+  const body = `
+    <form id="team-form">
+      <div class="field-gap" style="margin-bottom:12px;">
+        <label>Nome<input type="text" id="tm-name" placeholder="Nome da pessoa" required /></label>
+        <label>E-mail<input type="email" id="tm-email" placeholder="pessoa@exemplo.com" required /></label>
+        <label>Senha provisória<input type="password" id="tm-password" placeholder="Mínimo 6 caracteres" required /></label>
+        <label>Papel
+          <select id="tm-role">
+            <option value="funcionario">Funcionário (só registra abastecimentos)</option>
+            <option value="admin">Administrador (acesso completo)</option>
+          </select>
+        </label>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;">CRIAR ACESSO →</button>
+    </form>`;
+  document.getElementById("modal-root").innerHTML = modalShell("Novo usuário", body);
+
+  document.getElementById("team-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const payload = {
+      name: document.getElementById("tm-name").value,
+      email: document.getElementById("tm-email").value,
+      password: document.getElementById("tm-password").value,
+      role: document.getElementById("tm-role").value,
+    };
+    try {
+      await api("/auth/register", { method: "POST", body: JSON.stringify(payload) });
+      closeModal();
+      await loadAll();
+    } catch (err) { showBanner(err.message); }
+  });
+}
+
+async function openPhotoViewer(entity, id, kinds) {
+  // kinds: array de { kind, label }
+  document.getElementById("modal-root").innerHTML = modalShell("Fotos",
+    `<div class="photo-viewer-imgs" id="photo-viewer-body">
+       <p style="font-size:13px; color:var(--text-muted);">Carregando fotos…</p>
+     </div>`);
+
+  const body = document.getElementById("photo-viewer-body");
+  let html = "";
+
+  try {
+    for (const { kind, label } of kinds) {
+      const url = await loadAuthedImage(entity, id, kind);
+      html += `<div><img src="${url}" alt="${escapeHtml(label)}" /><p class="cap">${escapeHtml(label)}</p></div>`;
+    }
+    body.innerHTML = html || `<p style="font-size:13px; color:var(--text-muted);">Nenhuma foto disponível.</p>`;
+  } catch (err) {
+    body.innerHTML = `<p style="font-size:13px; color:var(--rust);">Não foi possível carregar as fotos.</p>`;
+  }
+}
+
+async function loadAuthedImage(entity, id, kind) {
+  const res = await fetch("/api/" + entity + "/" + id + "/photo/" + kind, {
+    headers: { Authorization: "Bearer " + state.token },
+  });
+  if (!res.ok) throw new Error("Falha ao carregar foto.");
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
+}
+
+function openRestockModal() {
+  const body = `
+    <form id="restock-form">
+      <div class="field-gap" style="margin-bottom:12px;">
+        <label>Quantidade recebida (L)<input type="number" id="rs-liters" class="ff-mono" min="0" step="0.1" placeholder="ex.: 5000" required /></label>
+        <label>Custo por litro (R$)<input type="number" id="rs-cost" class="ff-mono" min="0" step="0.01" placeholder="0,00" required /></label>
+        <p class="hint ff-mono" id="rs-total-hint"></p>
+        <label>Observação (opcional)<input type="text" id="rs-note" placeholder="Ex.: nota fiscal, fornecedor" /></label>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;">REGISTRAR REPOSIÇÃO →</button>
+    </form>`;
+  document.getElementById("modal-root").innerHTML = modalShell("Reposição de diesel", body);
+
+  const litersEl = document.getElementById("rs-liters");
+  const costEl = document.getElementById("rs-cost");
+  const hintEl = document.getElementById("rs-total-hint");
+  const updateHint = () => {
+    const l = Number(litersEl.value), c = Number(costEl.value);
+    hintEl.textContent = l > 0 && c > 0 ? "≈ " + fmtBRL(l * c) + " no total" : "";
+  };
+  litersEl.addEventListener("input", updateHint);
+  costEl.addEventListener("input", updateHint);
+
+  document.getElementById("restock-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      await api("/stock/restock", {
+        method: "POST",
+        body: JSON.stringify({
+          liters: Number(litersEl.value),
+          costPerLiter: Number(costEl.value),
+          note: document.getElementById("rs-note").value,
+        }),
+      });
+      closeModal();
+      await loadAll();
+    } catch (err) { showBanner(err.message); }
+  });
+}
+
+async function enablePushNotifications() {
+  try {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+      showBanner("Este navegador não suporta notificações push.");
+      return;
+    }
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") {
+      showBanner("Permissão de notificação não concedida.");
+      return;
+    }
+    const { publicKey } = await api("/push/public-key");
+    const reg = await navigator.serviceWorker.register("/sw.js");
+    await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(publicKey),
+    });
+    await api("/push/subscribe", { method: "POST", body: JSON.stringify({ subscription: sub }) });
+    window.__pushSubscribed = true;
+    render();
+  } catch (err) {
+    showBanner("Não foi possível ativar as notificações: " + err.message);
+  }
+}
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
+}
+
+function openProductModal() {
+  const catOptions = PRODUCT_CATEGORIES.map((c) => `<option value="${c.value}">${c.label}</option>`).join("");
+  const body = `
+    <form id="product-form">
+      <div class="field-gap" style="margin-bottom:12px;">
+        <label>Nome do produto<input type="text" id="pd-name" placeholder="Ex.: Glifosato" required /></label>
+        <label>Categoria<select id="pd-category">${catOptions}</select></label>
+        <div class="grid2">
+          <label>Unidade<input type="text" id="pd-unit" value="L" /></label>
+          <label>Custo por litro (R$)<input type="number" id="pd-cost" class="ff-mono" min="0" step="0.01" placeholder="0,00" required /></label>
+        </div>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;">SALVAR PRODUTO →</button>
+    </form>`;
+  document.getElementById("modal-root").innerHTML = modalShell("Novo produto", body);
+
+  document.getElementById("product-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      await api("/products", {
+        method: "POST",
+        body: JSON.stringify({
+          name: document.getElementById("pd-name").value,
+          category: document.getElementById("pd-category").value,
+          unit: document.getElementById("pd-unit").value,
+          costPerLiter: Number(document.getElementById("pd-cost").value),
+        }),
+      });
+      closeModal();
+      await loadAll();
+    } catch (err) { showBanner(err.message); }
+  });
+}
+
+function openProductRestockModal(productId) {
+  const product = state.products.find((p) => p.id === productId);
+  const body = `
+    <form id="product-restock-form">
+      <div class="field-gap" style="margin-bottom:12px;">
+        <label>Quantidade recebida (${escapeHtml(product?.unit || "L")})<input type="number" id="pr-liters" class="ff-mono" min="0" step="0.1" placeholder="ex.: 200" required /></label>
+        <label>Observação (opcional)<input type="text" id="pr-note" placeholder="Ex.: nota fiscal, fornecedor" /></label>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;">REGISTRAR REPOSIÇÃO →</button>
+    </form>`;
+  document.getElementById("modal-root").innerHTML = modalShell("Reposição — " + (product?.name || ""), body);
+
+  document.getElementById("product-restock-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      await api("/products/" + productId + "/restock", {
+        method: "POST",
+        body: JSON.stringify({
+          liters: Number(document.getElementById("pr-liters").value),
+          note: document.getElementById("pr-note").value,
+        }),
+      });
+      closeModal();
+      await loadAll();
+    } catch (err) { showBanner(err.message); }
+  });
+}
+
+function openPivotModal(pivotId) {
+  const pivot = pivotId ? state.pivots.find((p) => p.id === pivotId) : null;
+  const body = `
+    <form id="pivot-form">
+      <div class="field-gap" style="margin-bottom:12px;">
+        <div class="grid2">
+          <label>Número do pivô<input type="text" id="pv-number" placeholder="Ex.: 3" value="${escapeHtml(pivot?.number || "")}" /></label>
+          <label>Nome<input type="text" id="pv-name" placeholder="Ex.: Setor Norte" value="${escapeHtml(pivot?.name || "")}" required /></label>
+        </div>
+        <label>Área (hectares)<input type="number" id="pv-area" class="ff-mono" min="0" step="0.1" placeholder="ex.: 80" value="${pivot?.area_hectares ?? ""}" /></label>
+        <p class="hint">A cultura plantada nesse pivô é cadastrada à parte, na sub-aba "Culturas" (com data de plantio e previsão de colheita).</p>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;">${pivot ? "SALVAR ALTERAÇÕES" : "SALVAR PIVÔ"} →</button>
+    </form>`;
+  document.getElementById("modal-root").innerHTML = modalShell(pivot ? "Editar pivô" : "Novo pivô", body);
+
+  document.getElementById("pivot-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const payload = {
+      name: document.getElementById("pv-name").value,
+      number: document.getElementById("pv-number").value,
+      areaHectares: document.getElementById("pv-area").value || null,
+    };
+    try {
+      if (pivot) {
+        await api("/pivots/" + pivot.id, { method: "PUT", body: JSON.stringify(payload) });
+      } else {
+        await api("/pivots", { method: "POST", body: JSON.stringify(payload) });
+      }
+      closeModal();
+      await loadAll();
+    } catch (err) { showBanner(err.message); }
+  });
+}
+
+function openPlantingModal() {
+  if (state.pivots.length === 0) {
+    document.getElementById("modal-root").innerHTML = modalShell("Nova cultura",
+      `<p style="font-size:14px; color:var(--text-muted);">Cadastre um pivô primeiro, na sub-aba "Pivôs".</p>`);
+    return;
+  }
+  const pivotOptions = state.pivots.map((p) => `<option value="${p.id}">${p.number ? "Pivô " + escapeHtml(p.number) + " — " : ""}${escapeHtml(p.name)}</option>`).join("");
+
+  const body = `
+    <form id="planting-form">
+      <div class="field-gap" style="margin-bottom:12px;">
+        <label>Pivô<select id="pl-pivot">${pivotOptions}</select></label>
+        <label>Cultura<input type="text" id="pl-crop" placeholder="Ex.: Soja, milho, algodão..." required /></label>
+        <div class="grid2">
+          <label>Data de plantio<input type="date" id="pl-planting-date" value="${todayISO()}" required /></label>
+          <label>Possível colheita<input type="date" id="pl-harvest-date" /></label>
+        </div>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;">SALVAR CULTURA →</button>
+    </form>`;
+  document.getElementById("modal-root").innerHTML = modalShell("Nova cultura", body);
+
+  document.getElementById("planting-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      await api("/plantings", {
+        method: "POST",
+        body: JSON.stringify({
+          pivotId: document.getElementById("pl-pivot").value,
+          crop: document.getElementById("pl-crop").value,
+          plantingDate: document.getElementById("pl-planting-date").value,
+          expectedHarvestDate: document.getElementById("pl-harvest-date").value || null,
+        }),
+      });
+      closeModal();
+      await loadAll();
+    } catch (err) { showBanner(err.message); }
+  });
+}
+
+let applicationItemCount = 0;
+let applicationKind = "aplicacao";
+const MAX_APPLICATION_ITEMS = 8;
+
+function openApplicationModal(kind) {
+  applicationKind = kind === "plantio" ? "plantio" : "aplicacao";
+  const isPlantio = applicationKind === "plantio";
+  const modalTitle = isPlantio ? "Novo plantio" : "Nova aplicação";
+
+  if (state.pivots.length === 0 || state.products.length === 0) {
+    document.getElementById("modal-root").innerHTML = modalShell(modalTitle,
+      `<p style="font-size:14px; color:var(--text-muted);">Cadastre ao menos um pivô e um produto primeiro.</p>`);
+    return;
+  }
+  if (state.fieldWorkers.length === 0) {
+    document.getElementById("modal-root").innerHTML = modalShell(modalTitle,
+      `<p style="font-size:14px; color:var(--text-muted);">Cadastre ao menos um funcionário de campo primeiro, em "Equipe" → "Funcionários de campo".</p>`);
+    return;
+  }
+  applicationItemCount = 0;
+  const pivotOptions = state.pivots.map((p) => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join("");
+  const workerOptions = state.fieldWorkers.map((w) => `<option value="${escapeHtml(w.name)}">${escapeHtml(w.name)}</option>`).join("");
+
+  const body = `
+    <form id="application-form">
+      <div class="field-gap" style="margin-bottom:12px;">
+        <label>Pivô<select id="ap-pivot">${pivotOptions}</select></label>
+        <label>Data<input type="date" id="ap-date" value="${todayISO()}" required /></label>
+        <label><span id="ap-area-label">${isPlantio ? "Área plantada (hectares)" : "Área aplicada (hectares)"}</span><input type="number" id="ap-area" class="ff-mono" min="0" step="0.1" placeholder="ex.: 80" /></label>
+        <p class="hint" id="ap-area-hint" style="margin-top:-8px;">${isPlantio ? "Obrigatória nesse modo — é usada pra calcular o total a partir da dosagem por hectare de cada item." : ""}</p>
+
+        <p class="section-label" style="margin:8px 0 0;" id="ap-items-label">${isPlantio ? `Semente, adubo de base, tratamento de semente, jato dirigido (até ${MAX_APPLICATION_ITEMS} itens)` : `Produtos aplicados (até ${MAX_APPLICATION_ITEMS}, mesma passada)`}</p>
+        <div id="ap-items"></div>
+        <button type="button" class="small-btn" id="ap-add-item" onclick="addApplicationItemRow()">+ Adicionar produto</button>
+        ${isAdmin() ? `<p class="hint ff-mono" id="ap-cost-hint"></p>` : ""}
+
+        <label>Funcionário responsável<select id="ap-assigned-to">${workerOptions}</select></label>
+        <label>Observações (opcional)<textarea id="ap-notes" rows="2"></textarea></label>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;">SALVAR ${isPlantio ? "PLANTIO" : "APLICAÇÃO"} →</button>
+    </form>`;
+  document.getElementById("modal-root").innerHTML = modalShell(modalTitle, body);
+
+  addApplicationItemRow();
+  document.getElementById("ap-area").addEventListener("input", updateApplicationCostHint);
+
+  document.getElementById("application-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const area = document.getElementById("ap-area").value ? Number(document.getElementById("ap-area").value) : null;
+    if (applicationKind === "plantio" && !area) {
+      showBanner("Informe a área plantada (hectares) — a dosagem por hectare depende dela.");
+      return;
+    }
+    const items = [];
+    document.querySelectorAll("#ap-items [data-item-row]").forEach((row) => {
+      const productId = row.querySelector(".ap-item-product").value;
+      const enteredDosage = row.querySelector(".ap-item-dosage").value;
+      if (!productId || !enteredDosage) return;
+      if (applicationKind === "plantio") {
+        items.push({ productId, dosagePerHectare: Number(enteredDosage), dosageLiters: Number(enteredDosage) * area });
+      } else {
+        items.push({ productId, dosageLiters: Number(enteredDosage) });
+      }
+    });
+    if (items.length === 0) {
+      showBanner("Adicione ao menos um produto com dosagem.");
+      return;
+    }
+    try {
+      await api("/applications", {
+        method: "POST",
+        body: JSON.stringify({
+          kind: applicationKind,
+          pivotId: document.getElementById("ap-pivot").value,
+          date: document.getElementById("ap-date").value,
+          areaAppliedHectares: area,
+          assignedTo: document.getElementById("ap-assigned-to").value,
+          notes: document.getElementById("ap-notes").value,
+          items,
+        }),
+      });
+      closeModal();
+      await loadAll();
+    } catch (err) { showBanner(err.message); }
+  });
+}
+
+function updateApplicationRowLabel(row) {
+  const isPlantio = applicationKind === "plantio";
+  const product = state.products.find((p) => p.id == row.querySelector(".ap-item-product").value);
+  const unit = product ? product.unit : "L";
+  const labelEl = row.querySelector(".ap-item-dosage-label");
+  const inputEl = row.querySelector(".ap-item-dosage");
+  labelEl.textContent = isPlantio ? `Dose/ha (${unit}/ha)` : `Dosagem (${unit})`;
+  inputEl.placeholder = isPlantio ? "ex.: 3,5" : "0,0";
+}
+
+function addApplicationItemRow() {
+  if (applicationItemCount >= MAX_APPLICATION_ITEMS) return;
+  applicationItemCount++;
+  const rowId = "ap-row-" + applicationItemCount;
+  const productOptions = state.products.map((p) => `<option value="${p.id}">${escapeHtml(p.name)}${isAdmin() ? " (" + fmtBRL(p.cost_per_liter) + "/" + escapeHtml(p.unit) + ")" : ""}</option>`).join("");
+
+  const row = document.createElement("div");
+  row.setAttribute("data-item-row", "");
+  row.id = rowId;
+  row.style.cssText = "display:flex; gap:8px; align-items:flex-end; margin-bottom:8px;";
+  row.innerHTML = `
+    <label style="flex:2;">Produto<select class="ap-item-product">${productOptions}</select></label>
+    <label style="flex:1;"><span class="ap-item-dosage-label">Dosagem (L)</span><input type="number" class="ap-item-dosage ff-mono" min="0" step="0.01" placeholder="0,0" /></label>
+    <button type="button" class="del-btn" style="margin-bottom:2px;" onclick="removeApplicationItemRow('${rowId}')" aria-label="Remover produto">🗑</button>
+  `;
+  document.getElementById("ap-items").appendChild(row);
+
+  row.querySelector(".ap-item-product").addEventListener("change", () => { updateApplicationRowLabel(row); updateApplicationCostHint(); });
+  row.querySelector(".ap-item-dosage").addEventListener("input", updateApplicationCostHint);
+  updateApplicationRowLabel(row);
+
+  document.getElementById("ap-add-item").classList.toggle("hidden", applicationItemCount >= MAX_APPLICATION_ITEMS);
+  updateApplicationCostHint();
+}
+
+function removeApplicationItemRow(rowId) {
+  const row = document.getElementById(rowId);
+  if (row && document.querySelectorAll("#ap-items [data-item-row]").length > 1) {
+    row.remove();
+    applicationItemCount--;
+    document.getElementById("ap-add-item").classList.toggle("hidden", applicationItemCount >= MAX_APPLICATION_ITEMS);
+    updateApplicationCostHint();
+  }
+}
+
+function updateApplicationCostHint() {
+  if (!isAdmin()) return;
+  const hintEl = document.getElementById("ap-cost-hint");
+  if (!hintEl) return;
+  const area = document.getElementById("ap-area").value ? Number(document.getElementById("ap-area").value) : null;
+  let total = 0;
+  document.querySelectorAll("#ap-items [data-item-row]").forEach((row) => {
+    const product = state.products.find((p) => p.id == row.querySelector(".ap-item-product").value);
+    const entered = Number(row.querySelector(".ap-item-dosage").value);
+    if (!product || !(entered > 0)) return;
+    const totalDosage = applicationKind === "plantio" ? entered * (area || 0) : entered;
+    total += totalDosage * Number(product.cost_per_liter);
+  });
+  hintEl.textContent = total > 0 ? "≈ " + fmtBRL(total) + " neste lançamento" : "";
+}
+
+// Fotos temporárias enquanto os formulários de carga/venda estão abertos.
+let harvestPhotos = { gross: null, tare: null };
+let salePhotos = { gross: null, tare: null, plate: null };
+
+function weightPhotoField(idPrefix, label) {
+  return `<div class="photo-field">
+    <span style="font-size:12px; color:var(--text-muted);">${label}</span>
+    <button type="button" class="photo-pick-btn" id="${idPrefix}-btn" onclick="document.getElementById('${idPrefix}-input').click()">
+      📷 <span>Tirar/escolher foto</span>
+    </button>
+    <input type="file" id="${idPrefix}-input" accept="image/*" capture="environment" class="hidden" />
+    <img id="${idPrefix}-preview" class="photo-thumb hidden" />
+  </div>`;
+}
+
+async function pickWeightPhoto(idPrefix, store, key) {
+  const input = document.getElementById(idPrefix + "-input");
+  const file = input.files && input.files[0];
+  if (!file) return;
+  if (file.size > 8 * 1024 * 1024) {
+    showBanner("Essa foto é muito grande (máx. 8MB). Tente outra.");
+    return;
+  }
+  const dataUrl = await readFileAsDataUrl(file);
+  store[key] = dataUrl;
+  const preview = document.getElementById(idPrefix + "-preview");
+  const btn = document.getElementById(idPrefix + "-btn");
+  preview.src = dataUrl;
+  preview.classList.remove("hidden");
+  btn.classList.add("has-photo");
+  btn.querySelector("span").textContent = "Foto selecionada — trocar";
+}
+
+function openHarvestModal() {
+  harvestPhotos = { gross: null, tare: null };
+
+  if (state.plantings.length === 0) {
+    document.getElementById("modal-root").innerHTML = modalShell("Nova carga",
+      `<p style="font-size:14px; color:var(--text-muted);">Cadastre uma cultura primeiro, em "Custos Pivôs → Culturas".</p>`);
+    return;
+  }
+  const plantingOptions = state.plantings.map((pl) => `<option value="${pl.id}">${escapeHtml(pl.crop)} — ${pl.pivot_number ? "Pivô " + escapeHtml(pl.pivot_number) + " — " : ""}${escapeHtml(pl.pivot_name)} (${fmtDate(pl.planting_date)})</option>`).join("");
+
+  const body = `
+    <form id="harvest-form">
+      <div class="field-gap" style="margin-bottom:12px;">
+        <label>Cultura<select id="hv-planting">${plantingOptions}</select></label>
+        <label>Data<input type="date" id="hv-date" value="${todayISO()}" required /></label>
+
+        <div class="weight-photos-grid">
+          ${weightPhotoField("hv-gross", "Foto — peso bruto")}
+          ${weightPhotoField("hv-tare", "Foto — tara")}
+        </div>
+        <button type="button" class="extract-btn" id="hv-extract-btn" onclick="runHarvestExtraction()">✨ Ler pesos das fotos</button>
+        <p class="extract-hint">Preenche peso bruto e tara automaticamente — confira antes de salvar.</p>
+
+        <div class="grid2">
+          <label>Peso bruto (kg)<input type="number" id="hv-grossw" class="ff-mono" min="0" step="0.1" required /></label>
+          <label>Tara (kg)<input type="number" id="hv-tarew" class="ff-mono" min="0" step="0.1" required /></label>
+        </div>
+        <p class="hint ff-mono" id="hv-net-hint"></p>
+
+        <label>Operador<input type="text" id="hv-operator" value="${escapeHtml(state.user?.name || "")}" /></label>
+        <label>Observações (opcional)<textarea id="hv-notes" rows="2"></textarea></label>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;">SALVAR CARGA →</button>
+    </form>`;
+  document.getElementById("modal-root").innerHTML = modalShell("Nova carga", body);
+
+  document.getElementById("hv-gross-input").addEventListener("change", () => pickWeightPhoto("hv-gross", harvestPhotos, "gross"));
+  document.getElementById("hv-tare-input").addEventListener("change", () => pickWeightPhoto("hv-tare", harvestPhotos, "tare"));
+
+  const grossEl = document.getElementById("hv-grossw");
+  const tareEl = document.getElementById("hv-tarew");
+  const hintEl = document.getElementById("hv-net-hint");
+  const updateHint = () => {
+    const g = Number(grossEl.value), t = Number(tareEl.value);
+    if (g > 0 && t >= 0 && g > t) {
+      const net = g - t;
+      hintEl.textContent = "≈ " + fmtNum(net, 0) + " kg líquidos · " + fmtNum(net / BAG_KG, 1) + " sacas de 60kg";
+    } else {
+      hintEl.textContent = "";
+    }
+  };
+  grossEl.addEventListener("input", updateHint);
+  tareEl.addEventListener("input", updateHint);
+
+  document.getElementById("harvest-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      await api("/production", {
+        method: "POST",
+        body: JSON.stringify({
+          plantingId: document.getElementById("hv-planting").value,
+          date: document.getElementById("hv-date").value,
+          grossWeightKg: Number(grossEl.value),
+          tareWeightKg: Number(tareEl.value),
+          operator: document.getElementById("hv-operator").value,
+          notes: document.getElementById("hv-notes").value,
+          photoGross: harvestPhotos.gross,
+          photoTare: harvestPhotos.tare,
+        }),
+      });
+      closeModal();
+      await loadAll();
+    } catch (err) { showBanner(err.message); }
+  });
+}
+
+async function runHarvestExtraction() {
+  const btn = document.getElementById("hv-extract-btn");
+  const original = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = "Lendo fotos…";
+  try {
+    const result = await api("/vision/extract-scale", {
+      method: "POST",
+      body: JSON.stringify({ photoGross: harvestPhotos.gross, photoTare: harvestPhotos.tare }),
+    });
+    if (result.grossWeight !== null) document.getElementById("hv-grossw").value = result.grossWeight;
+    if (result.tareWeight !== null) document.getElementById("hv-tarew").value = result.tareWeight;
+    document.getElementById("hv-grossw").dispatchEvent(new Event("input"));
+    if (result.grossWeight === null && result.tareWeight === null) {
+      showBanner("Não deu para ler os pesos com confiança — confira e digite manualmente.");
+    }
+  } catch (err) {
+    showBanner(err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = original;
+  }
+}
+
+function openSaleModal() {
+  salePhotos = { gross: null, tare: null, plate: null };
+
+  const cropNames = [...new Set(state.plantings.map((pl) => pl.crop).filter(Boolean))];
+  if (cropNames.length === 0) {
+    document.getElementById("modal-root").innerHTML = modalShell("Nova venda",
+      `<p style="font-size:14px; color:var(--text-muted);">Cadastre ao menos uma cultura primeiro, em "Custos Pivôs → Culturas" — a venda precisa saber qual grão está sendo vendido.</p>`);
+    return;
+  }
+  const cropOptions = cropNames.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+
+  const body = `
+    <form id="sale-form">
+      <div class="field-gap" style="margin-bottom:12px;">
+        <label>Data<input type="date" id="sl-date" value="${todayISO()}" required /></label>
+        <label>Tipo de grão<select id="sl-crop">${cropOptions}</select></label>
+
+        <div class="weight-photos-grid">
+          ${weightPhotoField("sl-gross", "Foto — peso bruto")}
+          ${weightPhotoField("sl-tare", "Foto — tara")}
+          ${weightPhotoField("sl-plate", "Foto — placa")}
+        </div>
+        <div class="grid2">
+          <button type="button" class="extract-btn" id="sl-extract-btn" onclick="runSaleWeightExtraction()">✨ Ler pesos</button>
+          <button type="button" class="extract-btn" id="sl-plate-btn" onclick="runSalePlateExtraction()">✨ Ler placa</button>
+        </div>
+        <p class="extract-hint">Preenche peso bruto, tara e placa automaticamente — confira antes de salvar.</p>
+
+        <div class="grid2">
+          <label>Peso bruto (kg)<input type="number" id="sl-grossw" class="ff-mono" min="0" step="0.1" required /></label>
+          <label>Tara (kg)<input type="number" id="sl-tarew" class="ff-mono" min="0" step="0.1" required /></label>
+        </div>
+        <p class="hint ff-mono" id="sl-net-hint"></p>
+
+        <label>Placa do veículo<input type="text" id="sl-plate-text" placeholder="ABC1D23" style="text-transform:uppercase;" /></label>
+
+        <div class="grid2">
+          <label>Preço por saca (60kg)<input type="number" id="sl-price" class="ff-mono" min="0" step="0.01" placeholder="0,00" required /></label>
+          <label>Valor total<input type="text" id="sl-total-hint" class="ff-mono" disabled /></label>
+        </div>
+
+        <label style="flex-direction:row; align-items:center; gap:8px;">
+          <input type="checkbox" id="sl-paid" style="width:auto;" /> Já foi pago
+        </label>
+
+        <label>Operador<input type="text" id="sl-operator" value="${escapeHtml(state.user?.name || "")}" /></label>
+        <label>Observações (opcional)<textarea id="sl-notes" rows="2"></textarea></label>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;">SALVAR VENDA →</button>
+    </form>`;
+  document.getElementById("modal-root").innerHTML = modalShell("Nova venda", body);
+
+  document.getElementById("sl-gross-input").addEventListener("change", () => pickWeightPhoto("sl-gross", salePhotos, "gross"));
+  document.getElementById("sl-tare-input").addEventListener("change", () => pickWeightPhoto("sl-tare", salePhotos, "tare"));
+  document.getElementById("sl-plate-input").addEventListener("change", () => pickWeightPhoto("sl-plate", salePhotos, "plate"));
+
+  const grossEl = document.getElementById("sl-grossw");
+  const tareEl = document.getElementById("sl-tarew");
+  const priceEl = document.getElementById("sl-price");
+  const netHintEl = document.getElementById("sl-net-hint");
+  const totalEl = document.getElementById("sl-total-hint");
+  const updateHints = () => {
+    const g = Number(grossEl.value), t = Number(tareEl.value), price = Number(priceEl.value);
+    if (g > 0 && t >= 0 && g > t) {
+      const net = g - t;
+      const bags = net / BAG_KG;
+      netHintEl.textContent = "≈ " + fmtNum(net, 0) + " kg líquidos · " + fmtNum(bags, 1) + " sacas de 60kg";
+      totalEl.value = price > 0 ? fmtBRL(bags * price) : "";
+    } else {
+      netHintEl.textContent = "";
+      totalEl.value = "";
+    }
+  };
+  grossEl.addEventListener("input", updateHints);
+  tareEl.addEventListener("input", updateHints);
+  priceEl.addEventListener("input", updateHints);
+
+  document.getElementById("sale-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      await api("/sales", {
+        method: "POST",
+        body: JSON.stringify({
+          date: document.getElementById("sl-date").value,
+          crop: document.getElementById("sl-crop").value,
+          grossWeightKg: Number(grossEl.value),
+          tareWeightKg: Number(tareEl.value),
+          vehiclePlate: document.getElementById("sl-plate-text").value,
+          pricePerBag: Number(priceEl.value),
+          paid: document.getElementById("sl-paid").checked,
+          operator: document.getElementById("sl-operator").value,
+          notes: document.getElementById("sl-notes").value,
+          photoGross: salePhotos.gross,
+          photoTare: salePhotos.tare,
+          photoPlate: salePhotos.plate,
+        }),
+      });
+      closeModal();
+      await loadAll();
+    } catch (err) { showBanner(err.message); }
+  });
+}
+
+async function runSaleWeightExtraction() {
+  const btn = document.getElementById("sl-extract-btn");
+  const original = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = "Lendo…";
+  try {
+    const result = await api("/vision/extract-scale", {
+      method: "POST",
+      body: JSON.stringify({ photoGross: salePhotos.gross, photoTare: salePhotos.tare }),
+    });
+    if (result.grossWeight !== null) document.getElementById("sl-grossw").value = result.grossWeight;
+    if (result.tareWeight !== null) document.getElementById("sl-tarew").value = result.tareWeight;
+    document.getElementById("sl-grossw").dispatchEvent(new Event("input"));
+    if (result.grossWeight === null && result.tareWeight === null) {
+      showBanner("Não deu para ler os pesos com confiança — confira e digite manualmente.");
+    }
+  } catch (err) {
+    showBanner(err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = original;
+  }
+}
+
+async function runSalePlateExtraction() {
+  const btn = document.getElementById("sl-plate-btn");
+  const original = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = "Lendo…";
+  try {
+    const result = await api("/vision/extract-plate", {
+      method: "POST",
+      body: JSON.stringify({ photoPlate: salePhotos.plate }),
+    });
+    if (result.plate) {
+      document.getElementById("sl-plate-text").value = result.plate;
+    } else {
+      showBanner("Não deu para ler a placa com confiança — confira e digite manualmente.");
+    }
+  } catch (err) {
+    showBanner(err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = original;
+  }
+}
+
+function openEnergyModal() {
+  const pivotOptions = state.pivots.map((p) => `<option value="${p.id}">${p.number ? "Pivô " + escapeHtml(p.number) + " — " : ""}${escapeHtml(p.name)}</option>`).join("");
+
+  const body = `
+    <form id="energy-form">
+      <div class="field-gap" style="margin-bottom:12px;">
+        <label>Pivô (opcional)
+          <select id="en-pivot">
+            <option value="">Geral (não vinculado a um pivô)</option>
+            ${pivotOptions}
+          </select>
+        </label>
+        <label>Mês de referência<input type="month" id="en-month" value="${todayISO().slice(0, 7)}" required /></label>
+        <div class="grid2">
+          <label>Custo da demanda (R$)<input type="number" id="en-demand" class="ff-mono" min="0" step="0.01" placeholder="0,00" /></label>
+          <label>Custo do consumo (R$)<input type="number" id="en-consumption" class="ff-mono" min="0" step="0.01" placeholder="0,00" /></label>
+        </div>
+        <p class="hint ff-mono" id="en-total-hint"></p>
+        <label>Observação (opcional)<input type="text" id="en-note" placeholder="Ex.: nº da fatura" /></label>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;">SALVAR LANÇAMENTO →</button>
+    </form>`;
+  document.getElementById("modal-root").innerHTML = modalShell("Novo lançamento de energia", body);
+
+  const demandEl = document.getElementById("en-demand");
+  const consumptionEl = document.getElementById("en-consumption");
+  const hintEl = document.getElementById("en-total-hint");
+  const updateHint = () => {
+    const total = (Number(demandEl.value) || 0) + (Number(consumptionEl.value) || 0);
+    hintEl.textContent = total > 0 ? "Total: " + fmtBRL(total) : "";
+  };
+  demandEl.addEventListener("input", updateHint);
+  consumptionEl.addEventListener("input", updateHint);
+
+  document.getElementById("energy-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const monthValue = document.getElementById("en-month").value; // "AAAA-MM"
+    try {
+      await api("/energy", {
+        method: "POST",
+        body: JSON.stringify({
+          pivotId: document.getElementById("en-pivot").value || null,
+          referenceMonth: monthValue ? monthValue + "-01" : null,
+          demandCost: Number(demandEl.value) || 0,
+          consumptionCost: Number(consumptionEl.value) || 0,
+          note: document.getElementById("en-note").value,
+        }),
+      });
+      closeModal();
+      await loadAll();
+    } catch (err) { showBanner(err.message); }
+  });
+}
+
+function modalShell(title, bodyHtml) {
+  return `<div class="modal-backdrop" onclick="if(event.target===this) closeModal()">
+    <div class="modal">
+      <div class="modal-head">
+        <p class="modal-title">${escapeHtml(title)}</p>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">${bodyHtml}</div>
+    </div>
+  </div>`;
+}
+
+/* =========================================================================
+   Boot
+   ========================================================================= */
+(function boot() {
+  setAuthMode("login");
+  if (state.token && state.user) {
+    enterApp();
+  }
+  // Registra o service worker cedo (independente de notificações push) —
+  // é o que permite "Adicionar à tela inicial" funcionar de forma
+  // confiável em qualquer navegador.
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  }
+  // Mantém os dados atualizados entre as pessoas usando o app
+  window.addEventListener("focus", () => { if (state.token) loadAll(); });
+  setInterval(() => { if (state.token) loadAll(); }, 20000);
+})();
+</script>
+</body>
+</html>

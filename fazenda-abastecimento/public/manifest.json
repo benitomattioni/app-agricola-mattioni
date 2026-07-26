@@ -1,0 +1,32 @@
+{
+  "name": "Controle Interno — Agrícola Mattioni Ltda",
+  "short_name": "Ctrl. Interno",
+  "description": "Controle interno de abastecimento, defensivos, produção e vendas da Agrícola Mattioni Ltda.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#1F211B",
+  "theme_color": "#1F211B",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

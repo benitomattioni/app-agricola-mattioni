@@ -407,14 +407,16 @@ function readingUnitLabel(type) {
 /* =========================================================================
    Troca de óleo — status (ok / logo / atrasada / sem registro)
    ========================================================================= */
-// "motor" vale pra qualquer máquina. "hidraulico" e "transmissao" só fazem
-// sentido em tratores — o mesmo intervalo de alerta (500h/6 meses) vale
-// pros três por padrão, já que o app não tem como saber o manual de cada
-// equipamento.
+// "motor" vale pra qualquer máquina. "hidraulico" e "transmissao" fazem
+// sentido em máquinas com sistema hidráulico/transmissão robustos: tratores,
+// pá carregadeira, escavadeira e rolo compactador — o mesmo intervalo de
+// alerta (500h/6 meses) vale pros três por padrão, já que o app não tem
+// como saber o manual de cada equipamento.
+const HYDRAULIC_TRANSMISSION_TYPES = ["trator", "pa_carregadeira", "escavadeira", "rolo_compactador"];
 const OIL_TYPES = [
   { value: "motor", label: "Óleo do motor", appliesTo: null },
-  { value: "hidraulico", label: "Óleo hidráulico", appliesTo: ["trator"] },
-  { value: "transmissao", label: "Óleo da transmissão", appliesTo: ["trator"] },
+  { value: "hidraulico", label: "Óleo hidráulico", appliesTo: HYDRAULIC_TRANSMISSION_TYPES },
+  { value: "transmissao", label: "Óleo da transmissão", appliesTo: HYDRAULIC_TRANSMISSION_TYPES },
 ];
 function applicableOilTypes(machineType) {
   return OIL_TYPES.filter((t) => !t.appliesTo || t.appliesTo.includes(machineType));

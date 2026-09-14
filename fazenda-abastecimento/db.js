@@ -343,6 +343,9 @@ async function initDb() {
   // ciclo específico. "crop" aqui é só o nome da cultura em texto (ex.:
   // "Soja"), igual ao que já existe em harvest_loads.
   await pool.query(`ALTER TABLE sales ADD COLUMN IF NOT EXISTS crop TEXT;`);
+  // Pessoa ou empresa para quem a venda foi feita — separado do "operator"
+  // (que é quem LANÇOU o registro no app, não necessariamente o comprador).
+  await pool.query(`ALTER TABLE sales ADD COLUMN IF NOT EXISTS buyer TEXT;`);
 
   // Estoque de grãos (em sacas de 60kg): produção soma, venda desconta —
   // mesmo padrão em ledger usado pro diesel e pelos defensivos.
@@ -355,6 +358,20 @@ async function initDb() {
       harvest_load_id INTEGER REFERENCES harvest_loads(id) ON DELETE SET NULL,
       sale_id INTEGER REFERENCES sales(id) ON DELETE SET NULL,
       created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      created_at TIMESTAMPTZ DEFAULT now()
+    );
+  `);
+
+  // Recuperação de senha por e-mail: guarda só o HASH do token (nunca o
+  // token em si), com validade curta. Cada linha vale pra um único uso —
+  // depois de usado, "used_at" é preenchido e o token não serve mais.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS password_resets (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token_hash TEXT NOT NULL,
+      expires_at TIMESTAMPTZ NOT NULL,
+      used_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ DEFAULT now()
     );
   `);

@@ -382,21 +382,37 @@ somando sozinhas naquele cartão.
 vendido (ex.: "Soja", "Milho" — a lista vem dos nomes de cultura já
 cadastrados), não um pivô ou ciclo específico: o estoque de grãos é por
 tipo de grão, somando a produção de todos os pivôs/ciclos que produziram
-aquele grão, **independente de pivô**. Além disso, dá pra tirar foto do
-peso bruto, da tara e da placa do veículo — os botões "Ler pesos" e "Ler
-placa" tentam preencher automaticamente. O preço por saca (60kg) é
-informado na hora, e o valor total é calculado sozinho. Cada venda tem um
-marcador **Pago/Pendente** (só o administrador pode alternar).
+aquele grão, **independente de pivô**. Também pede o **Comprador**
+(pessoa ou empresa pra quem a venda foi feita) — diferente do campo
+"Operador", que é só quem lançou o registro no app. Além disso, dá pra
+tirar foto do peso bruto, da tara e da placa do veículo — os botões "Ler
+pesos" e "Ler placa" tentam preencher automaticamente. O preço por saca
+(60kg) é informado na hora, e o valor total é calculado sozinho. Cada
+venda tem um marcador **Pago/Pendente** (só o administrador pode
+alternar).
 
-A sub-aba **"Resumo"** (só admin) mostra o **estoque em sacas por tipo de
-grão** — um cartão por grão (não por pivô nem por ciclo), com produzido,
-vendido e saldo em estoque daquele grão. Vendas ou cargas sem tipo de grão
-definido (de antes dessa mudança) aparecem à parte, num total "sem tipo de
-grão definido".
+O administrador pode **editar** uma venda já lançada (tocando no ícone
+✏️ no histórico) — dá pra corrigir data, grão, comprador, pesos, placa,
+preço e status de pagamento depois do lançamento (as fotos originais não
+mudam). A exclusão (🗑) também continua restrita ao administrador.
 
-Excluir uma carga ou uma venda atualiza esse saldo automaticamente (ele é
-sempre calculado na hora, a partir das cargas e vendas daquela cultura —
-não depende de nenhum ajuste manual).
+A sub-aba **"Resumo"** (só admin, e é a que abre primeiro nessa aba)
+mostra:
+- **Por comprador** — total vendido (R$) e sacas, agrupado por quem
+  comprou.
+- **Estoque em sacas por tipo de grão** — um cartão por grão (não por
+  pivô nem por ciclo), com produzido, vendido e saldo em estoque.
+
+Na sub-aba **"Vendas"**, o histórico também aparece agrupado por
+comprador (um cabeçalho com o nome, e as vendas daquela pessoa/empresa
+embaixo) — venda sem comprador definido (de antes dessa mudança) cai num
+grupo à parte, "Sem comprador definido". O mesmo vale pro estoque:
+cargas ou vendas sem tipo de grão definido aparecem num total "sem tipo
+de grão definido".
+
+Excluir ou editar uma carga ou venda atualiza os saldos automaticamente
+(são sempre calculados na hora, a partir das cargas e vendas existentes —
+não dependem de nenhum ajuste manual).
 
 ## 12. Papéis de usuário
 
@@ -439,3 +455,23 @@ administrador logado, pela aba "Equipe".
   é administrador — não é só a tela que esconde o botão, a rota da API
   também recusa o pedido.
 - Fotos só podem ser abertas por quem está logado no app.
+
+## 14. Esqueci minha senha
+
+Na tela de login, o link **"Esqueci minha senha"** abre um campo pra
+digitar o e-mail da conta. O app manda um e-mail com um link de
+recuperação, válido por **1 hora** e de **uso único**. Ao abrir o link, a
+pessoa cai direto na tela de criar uma senha nova (digitada duas vezes,
+pra confirmar), sem precisar da senha antiga.
+
+Por segurança, a mensagem que aparece depois de pedir a recuperação é
+sempre a mesma, exista ou não uma conta com aquele e-mail — assim ninguém
+descobre por tentativa quais e-mails têm conta cadastrada.
+
+**Isso depende das variáveis `SMTP_*` estarem configuradas no Render**
+(a mesma configuração de e-mail já usada pro alerta de estoque de diesel
+baixo — veja a seção 8). Se elas estiverem em branco, o link não chega a
+lugar nenhum: o pedido "funciona" (mostra a mesma mensagem de sempre), mas
+nenhum e-mail é enviado de fato, e o log do servidor avisa
+"E-mail não configurado". Nesse caso, resetar uma senha exige alterar a
+tabela `users` direto no banco de dados.

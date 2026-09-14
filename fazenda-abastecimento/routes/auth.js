@@ -1,9 +1,17 @@
 const express = require("express");
+const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { pool } = require("../db");
+const { sendMail } = require("../lib/notifications");
 
 const router = express.Router();
+
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hora
+
+function hashToken(token) {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
 
 function signToken(user) {
   return jwt.sign(
@@ -115,6 +123,101 @@ router.post("/login", async (req, res) => {
   } catch (e) {
     console.error("Erro em /login:", e);
     res.status(500).json({ error: "Erro ao entrar. Tente novamente." });
+  }
+});
+
+// Pede a recuperação — recebe o e-mail, e SE existir uma conta com ele,
+// manda um link por e-mail. Responde com a mesma mensagem genérica em
+// qualquer caso (existindo o e-mail ou não), pra não revelar quais
+// e-mails têm conta cadastrada.
+router.post("/forgot-password", async (req, res) => {
+  const { email } = req.body || {};
+  const genericMessage =
+    "Se esse e-mail tiver uma conta cadastrada, enviamos um link de recuperação para ele.";
+
+  if (!email || !email.trim()) {
+    return res.status(400).json({ error: "Informe o e-mail." });
+  }
+
+  try {
+    const result = await pool.query("SELECT id, name, email FROM users WHERE email = $1", [
+      email.toLowerCase().trim(),
+    ]);
+    const user = result.rows[0];
+
+    if (user) {
+      const token = crypto.randomBytes(32).toString("hex");
+      const tokenHash = hashToken(token);
+      const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
+
+      await pool.query(
+        "INSERT INTO password_resets (user_id, token_hash, expires_at) VALUES ($1, $2, $3)",
+        [user.id, tokenHash, expiresAt]
+      );
+
+      const baseUrl = req.protocol + "://" + req.get("host");
+      const resetLink = `${baseUrl}/?reset=${token}`;
+
+      await sendMail({
+        to: user.email,
+        subject: "Recuperação de senha — Controle Interno",
+        text:
+          `Olá, ${user.name}.\n\n` +
+          `Alguém (esperamos que você) pediu pra trocar a senha da sua conta no Controle Interno.\n\n` +
+          `Toque no link abaixo pra criar uma senha nova. Ele vale por 1 hora:\n${resetLink}\n\n` +
+          `Se não foi você quem pediu, pode ignorar este e-mail — sua senha continua a mesma.`,
+        html:
+          `<p>Olá, ${user.name}.</p>` +
+          `<p>Alguém (esperamos que você) pediu pra trocar a senha da sua conta no <strong>Controle Interno</strong>.</p>` +
+          `<p><a href="${resetLink}">Toque aqui pra criar uma senha nova</a> — o link vale por 1 hora.</p>` +
+          `<p>Se não foi você quem pediu, pode ignorar este e-mail — sua senha continua a mesma.</p>`,
+      });
+    }
+
+    res.json({ message: genericMessage });
+  } catch (e) {
+    console.error("Erro em /forgot-password:", e);
+    res.status(500).json({ error: "Erro ao processar o pedido. Tente novamente." });
+  }
+});
+
+// Confirma a recuperação — recebe o token (do link do e-mail) e a senha
+// nova. Confere validade e uso único antes de trocar.
+router.post("/reset-password", async (req, res) => {
+  const { token, password } = req.body || {};
+
+  if (!token || !password || password.length < 6) {
+    return res.status(400).json({
+      error: "Link inválido ou senha muito curta (mínimo 6 caracteres).",
+    });
+  }
+
+  try {
+    const tokenHash = hashToken(token);
+    const result = await pool.query(
+      `SELECT * FROM password_resets
+       WHERE token_hash = $1 AND used_at IS NULL AND expires_at > now()`,
+      [tokenHash]
+    );
+    const reset = result.rows[0];
+
+    if (!reset) {
+      return res.status(400).json({
+        error: "Esse link de recuperação é inválido ou já expirou. Peça um novo.",
+      });
+    }
+
+    const hash = await bcrypt.hash(password, 10);
+    await pool.query("UPDATE users SET password_hash = $1 WHERE id = $2", [
+      hash,
+      reset.user_id,
+    ]);
+    await pool.query("UPDATE password_resets SET used_at = now() WHERE id = $1", [reset.id]);
+
+    res.json({ message: "Senha alterada. Já pode entrar com a senha nova." });
+  } catch (e) {
+    console.error("Erro em /reset-password:", e);
+    res.status(500).json({ error: "Erro ao trocar a senha. Tente novamente." });
   }
 });
 

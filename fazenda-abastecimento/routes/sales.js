@@ -20,7 +20,7 @@ router.get("/", async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT id, date, gross_weight_kg, tare_weight_kg, net_weight_kg, bags_60kg, crop,
-             vehicle_plate, price_per_bag, total_value, paid, operator, notes,
+             buyer, vehicle_plate, price_per_bag, total_value, paid, operator, notes,
              created_by, created_at,
              (photo_gross IS NOT NULL) AS has_photo_gross,
              (photo_tare IS NOT NULL) AS has_photo_tare,
@@ -28,8 +28,6 @@ router.get("/", async (req, res) => {
       FROM sales
       ORDER BY date DESC, created_at DESC
     `);
-    // Status de pagamento e valor total são informação restrita ao
-    // administrador — quem não é admin recebe a lista sem esses campos.
     const rows = req.user.role === "admin"
       ? result.rows
       : result.rows.map(({ paid, total_value, ...rest }) => rest);
@@ -40,13 +38,11 @@ router.get("/", async (req, res) => {
   }
 });
 
-// A venda desconta do estoque por TIPO DE GRÃO (nome da cultura),
-// independente de pivô ou ciclo específico — por isso pede só o nome do
-// grão, não uma cultura/plantio específico como as cargas de produção.
 router.post("/", async (req, res) => {
   const {
     date,
     crop,
+    buyer,
     grossWeightKg,
     tareWeightKg,
     vehiclePlate,
@@ -68,6 +64,9 @@ router.post("/", async (req, res) => {
   if (!crop || !crop.trim()) {
     return res.status(400).json({ error: "Selecione o tipo de grão vendido." });
   }
+  if (!buyer || !buyer.trim()) {
+    return res.status(400).json({ error: "Informe pra quem (pessoa ou empresa) foi a venda." });
+  }
   if (gross <= tare) {
     return res.status(400).json({ error: "O peso bruto deve ser maior que a tara." });
   }
@@ -87,13 +86,13 @@ router.post("/", async (req, res) => {
 
     const result = await pool.query(
       `INSERT INTO sales
-        (date, gross_weight_kg, tare_weight_kg, net_weight_kg, bags_60kg, crop, vehicle_plate,
+        (date, gross_weight_kg, tare_weight_kg, net_weight_kg, bags_60kg, crop, buyer, vehicle_plate,
          price_per_bag, total_value, paid, operator, notes,
          photo_gross, photo_gross_mime, photo_tare, photo_tare_mime, photo_plate, photo_plate_mime,
          created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
        RETURNING id, date, gross_weight_kg, tare_weight_kg, net_weight_kg, bags_60kg,
-                 crop, vehicle_plate, price_per_bag, total_value, paid, operator, notes,
+                 crop, buyer, vehicle_plate, price_per_bag, total_value, paid, operator, notes,
                  created_by, created_at,
                  (photo_gross IS NOT NULL) AS has_photo_gross,
                  (photo_tare IS NOT NULL) AS has_photo_tare,
@@ -105,6 +104,7 @@ router.post("/", async (req, res) => {
         net,
         bags,
         crop.trim(),
+        buyer.trim(),
         vehiclePlate ? vehiclePlate.trim().toUpperCase() : null,
         price,
         totalValue,
@@ -128,7 +128,73 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Marcar/desmarcar como pago — ação financeira, restrita ao administrador.
+// Edita uma venda já lançada — restrito ao administrador, já que mexe em
+// preço/valor total. Não altera fotos (ficam as originais); os outros
+// campos (peso, grão, comprador, placa, preço, pago, observações) podem
+// ser corrigidos depois do lançamento.
+router.put("/:id", requireAdmin, async (req, res) => {
+  const { date, crop, buyer, grossWeightKg, tareWeightKg, vehiclePlate, pricePerBag, paid, notes } =
+    req.body || {};
+
+  const gross = Number(grossWeightKg);
+  const tare = Number(tareWeightKg);
+
+  if (!date || !grossWeightKg || tareWeightKg === undefined || tareWeightKg === null) {
+    return res.status(400).json({ error: "Data, peso bruto e tara são obrigatórios." });
+  }
+  if (!crop || !crop.trim()) {
+    return res.status(400).json({ error: "Selecione o tipo de grão vendido." });
+  }
+  if (!buyer || !buyer.trim()) {
+    return res.status(400).json({ error: "Informe pra quem (pessoa ou empresa) foi a venda." });
+  }
+  if (gross <= tare) {
+    return res.status(400).json({ error: "O peso bruto deve ser maior que a tara." });
+  }
+
+  try {
+    const net = gross - tare;
+    const bags = net / BAG_KG;
+    const price = Number(pricePerBag) || 0;
+    const totalValue = bags * price;
+
+    const result = await pool.query(
+      `UPDATE sales SET
+        date = $1, gross_weight_kg = $2, tare_weight_kg = $3, net_weight_kg = $4, bags_60kg = $5,
+        crop = $6, buyer = $7, vehicle_plate = $8, price_per_bag = $9, total_value = $10,
+        paid = $11, notes = $12
+       WHERE id = $13
+       RETURNING id, date, gross_weight_kg, tare_weight_kg, net_weight_kg, bags_60kg,
+                 crop, buyer, vehicle_plate, price_per_bag, total_value, paid, operator, notes,
+                 created_by, created_at,
+                 (photo_gross IS NOT NULL) AS has_photo_gross,
+                 (photo_tare IS NOT NULL) AS has_photo_tare,
+                 (photo_plate IS NOT NULL) AS has_photo_plate`,
+      [
+        date,
+        gross,
+        tare,
+        net,
+        bags,
+        crop.trim(),
+        buyer.trim(),
+        vehiclePlate ? vehiclePlate.trim().toUpperCase() : null,
+        price,
+        totalValue,
+        !!paid,
+        notes || null,
+        req.params.id,
+      ]
+    );
+
+    if (result.rows.length === 0) return res.status(404).json({ error: "Venda não encontrada." });
+    res.json(result.rows[0]);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Erro ao editar a venda." });
+  }
+});
+
 router.put("/:id/paid", requireAdmin, async (req, res) => {
   const { paid } = req.body || {};
   try {

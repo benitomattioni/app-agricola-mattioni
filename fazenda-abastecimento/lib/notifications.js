@@ -110,4 +110,27 @@ async function sendEmailToAdmins(admins, title, body) {
   }
 }
 
-module.exports = { notifyLowStock, pushConfigured, mailConfigured };
+// Genérica — usada tanto pelo alerta de estoque baixo quanto pela
+// recuperação de senha. Se o SMTP não estiver configurado, avisa no log
+// do servidor e retorna false (quem chamou decide o que fazer).
+async function sendMail({ to, subject, text, html }) {
+  if (!mailConfigured) {
+    console.warn("E-mail não configurado (faltam variáveis SMTP_*).");
+    return false;
+  }
+  try {
+    await transporter.sendMail({
+      from: process.env.ALERT_EMAIL_FROM || process.env.SMTP_USER,
+      to,
+      subject,
+      text,
+      html,
+    });
+    return true;
+  } catch (err) {
+    console.error("Erro ao enviar e-mail:", err.message);
+    return false;
+  }
+}
+
+module.exports = { notifyLowStock, pushConfigured, mailConfigured, sendMail };

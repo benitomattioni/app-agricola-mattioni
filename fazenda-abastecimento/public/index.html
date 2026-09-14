@@ -251,12 +251,14 @@
     <h1 class="ff-display" style="font-size:16px; margin:0 0 2px; letter-spacing:0.03em;">CONTROLE INTERNO</h1>
     <p style="font-size:12px; color:var(--text-muted); margin:0 0 18px;">Agrícola Mattioni Ltda</p>
 
-    <div class="auth-tabs">
+    <div class="auth-tabs" id="auth-tabs-wrap">
       <button class="auth-tab active" id="tab-login" onclick="setAuthMode('login')">Entrar</button>
       <button class="auth-tab" id="tab-register" onclick="setAuthMode('register')">Criar conta</button>
     </div>
+    <button type="button" id="back-to-login" class="hidden" onclick="setAuthMode('login')" style="background:none; border:none; color:var(--text-muted); font-size:12px; margin:0 0 14px; padding:0; text-align:left; text-decoration:underline;">← Voltar para o login</button>
 
     <div id="auth-error" class="auth-error hidden"></div>
+    <div id="auth-success" class="auth-error hidden" style="background:rgba(127,160,91,0.15); border-color:var(--green); color:#C7DDB0;"></div>
     <p id="auth-hint" style="font-size:11px; color:var(--text-faint); margin:-6px 0 14px;">
       A primeira conta criada aqui vira administradora. Contas de funcionários são criadas
       pelo administrador dentro do app, na aba "Equipe".
@@ -268,17 +270,24 @@
           Nome
           <input type="text" id="input-name" placeholder="Seu nome" autocomplete="name" />
         </label>
-        <label>
+        <label id="field-email">
           E-mail
           <input type="email" id="input-email" placeholder="voce@exemplo.com" autocomplete="email" required />
         </label>
-        <label>
+        <label id="field-password">
           Senha
           <input type="password" id="input-password" placeholder="Mínimo 6 caracteres" autocomplete="current-password" required />
+        </label>
+        <label id="field-confirm-password" class="hidden">
+          Confirmar senha nova
+          <input type="password" id="input-confirm-password" placeholder="Repita a senha" autocomplete="new-password" />
         </label>
       </div>
       <button type="submit" class="btn-primary" style="width:100%;" id="auth-submit">ENTRAR</button>
     </form>
+    <p id="forgot-link-wrap" style="text-align:center; margin:12px 0 0;">
+      <a href="#" onclick="event.preventDefault(); setAuthMode('forgot');" style="color:var(--text-muted); font-size:12px; text-decoration:underline;">Esqueci minha senha</a>
+    </p>
   </div>
 </div>
 
@@ -352,6 +361,7 @@ let state = {
   token: localStorage.getItem("token") || null,
   user: JSON.parse(localStorage.getItem("user") || "null"),
   authMode: "login",
+  resetToken: null,
   tab: "dashboard",
   machines: [],
   refills: [],
@@ -407,16 +417,14 @@ function readingUnitLabel(type) {
 /* =========================================================================
    Troca de óleo — status (ok / logo / atrasada / sem registro)
    ========================================================================= */
-// "motor" vale pra qualquer máquina. "hidraulico" e "transmissao" fazem
-// sentido em máquinas com sistema hidráulico/transmissão robustos: tratores,
-// pá carregadeira, escavadeira e rolo compactador — o mesmo intervalo de
-// alerta (500h/6 meses) vale pros três por padrão, já que o app não tem
-// como saber o manual de cada equipamento.
-const HYDRAULIC_TRANSMISSION_TYPES = ["trator", "pa_carregadeira", "escavadeira", "rolo_compactador"];
+// "motor" vale pra qualquer máquina. "hidraulico" e "transmissao" só fazem
+// sentido em tratores — o mesmo intervalo de alerta (500h/6 meses) vale
+// pros três por padrão, já que o app não tem como saber o manual de cada
+// equipamento.
 const OIL_TYPES = [
   { value: "motor", label: "Óleo do motor", appliesTo: null },
-  { value: "hidraulico", label: "Óleo hidráulico", appliesTo: HYDRAULIC_TRANSMISSION_TYPES },
-  { value: "transmissao", label: "Óleo da transmissão", appliesTo: HYDRAULIC_TRANSMISSION_TYPES },
+  { value: "hidraulico", label: "Óleo hidráulico", appliesTo: ["trator"] },
+  { value: "transmissao", label: "Óleo da transmissão", appliesTo: ["trator"] },
 ];
 function applicableOilTypes(machineType) {
   return OIL_TYPES.filter((t) => !t.appliesTo || t.appliesTo.includes(machineType));
@@ -516,33 +524,79 @@ function showBanner(msg) {
    ========================================================================= */
 function setAuthMode(mode) {
   state.authMode = mode;
+  const isLoginOrRegister = mode === "login" || mode === "register";
+
+  document.getElementById("auth-tabs-wrap").classList.toggle("hidden", !isLoginOrRegister);
+  document.getElementById("back-to-login").classList.toggle("hidden", isLoginOrRegister);
+  document.getElementById("forgot-link-wrap").classList.toggle("hidden", mode !== "login");
+  document.getElementById("auth-hint").classList.toggle("hidden", !isLoginOrRegister);
+
   document.getElementById("tab-login").classList.toggle("active", mode === "login");
   document.getElementById("tab-register").classList.toggle("active", mode === "register");
-  document.getElementById("field-name").classList.toggle("hidden", mode === "login");
+
+  document.getElementById("field-name").classList.toggle("hidden", mode !== "register");
   document.getElementById("input-name").required = mode === "register";
-  document.getElementById("auth-submit").textContent = mode === "login" ? "ENTRAR" : "CRIAR CONTA";
+
+  document.getElementById("field-email").classList.toggle("hidden", mode === "reset");
+  document.getElementById("input-email").required = mode !== "reset";
+
+  document.getElementById("field-password").classList.toggle("hidden", mode === "forgot");
+  document.getElementById("input-password").required = mode !== "forgot";
+  document.getElementById("input-password").placeholder =
+    mode === "reset" ? "Sua senha nova (mínimo 6 caracteres)" : "Mínimo 6 caracteres";
+
+  document.getElementById("field-confirm-password").classList.toggle("hidden", mode !== "reset");
+  document.getElementById("input-confirm-password").required = mode === "reset";
+
+  const labels = { login: "ENTRAR", register: "CRIAR CONTA", forgot: "ENVIAR LINK", reset: "SALVAR SENHA NOVA" };
+  document.getElementById("auth-submit").textContent = labels[mode];
+
   document.getElementById("auth-error").classList.add("hidden");
 }
 
 document.getElementById("auth-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const errEl = document.getElementById("auth-error");
+  const okEl = document.getElementById("auth-success");
   errEl.classList.add("hidden");
+  okEl.classList.add("hidden");
   const email = document.getElementById("input-email").value.trim();
   const password = document.getElementById("input-password").value;
+  const confirmPassword = document.getElementById("input-confirm-password").value;
   const name = document.getElementById("input-name").value.trim();
   const submitBtn = document.getElementById("auth-submit");
-  submitBtn.disabled = true;
 
+  if (state.authMode === "reset" && password !== confirmPassword) {
+    errEl.textContent = "As duas senhas digitadas são diferentes.";
+    errEl.classList.remove("hidden");
+    return;
+  }
+
+  submitBtn.disabled = true;
   try {
-    const path = state.authMode === "login" ? "/auth/login" : "/auth/register";
-    const body = state.authMode === "login" ? { email, password } : { name, email, password };
-    const data = await api(path, { method: "POST", body: JSON.stringify(body) });
-    state.token = data.token;
-    state.user = data.user;
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
-    await enterApp();
+    if (state.authMode === "login" || state.authMode === "register") {
+      const path = state.authMode === "login" ? "/auth/login" : "/auth/register";
+      const body = state.authMode === "login" ? { email, password } : { name, email, password };
+      const data = await api(path, { method: "POST", body: JSON.stringify(body) });
+      state.token = data.token;
+      state.user = data.user;
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      await enterApp();
+    } else if (state.authMode === "forgot") {
+      const data = await api("/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) });
+      okEl.textContent = data.message;
+      okEl.classList.remove("hidden");
+    } else if (state.authMode === "reset") {
+      const data = await api("/auth/reset-password", {
+        method: "POST",
+        body: JSON.stringify({ token: state.resetToken, password }),
+      });
+      state.resetToken = null;
+      setAuthMode("login");
+      okEl.textContent = data.message;
+      okEl.classList.remove("hidden");
+    }
   } catch (err) {
     errEl.textContent = err.message;
     errEl.classList.remove("hidden");
@@ -1247,8 +1301,32 @@ function renderGrainSummary() {
     <div class="stat-grid">
       <div class="stat-card"><p class="label">Total recebido</p><p class="value ff-mono" style="color:var(--green);">${fmtBRL(totalReceived)}</p></div>
       <div class="stat-card"><p class="label">A receber</p><p class="value ff-mono" style="color:var(--rust);">${fmtBRL(totalPending)}</p></div>
-    </div>
-    <p class="section-label" style="margin-top:14px;">Estoque por tipo de grão</p>`;
+    </div>`;
+
+  const byBuyer = {};
+  state.sales.forEach((s) => {
+    const key = s.buyer || "Sem comprador definido";
+    if (!byBuyer[key]) byBuyer[key] = { bags: 0, total: 0 };
+    byBuyer[key].bags += Number(s.bags_60kg || 0);
+    byBuyer[key].total += Number(s.total_value || 0);
+  });
+  const buyerRows = Object.entries(byBuyer).sort((a, b) => b[1].total - a[1].total);
+
+  html += `<p class="section-label" style="margin-top:14px;">Por comprador</p>`;
+  if (buyerRows.length === 0) {
+    html += emptyState("🧾", "Nenhuma venda registrada ainda", "Assim que houver vendas, o total por comprador aparece aqui.");
+  } else {
+    html += `<div class="panel">` + buyerRows.map(([buyer, v]) => `
+      <div class="bar-row">
+        <div class="bar-top">
+          <span>${escapeHtml(buyer)}</span>
+          <span class="ff-mono" style="color:var(--yellow);">${fmtBRL(v.total)}</span>
+        </div>
+        <p class="hint" style="margin:4px 0 0;">${fmtNum(v.bags, 1)} sc vendidas</p>
+      </div>`).join("") + `</div>`;
+  }
+
+  html += `<p class="section-label" style="margin-top:14px;">Estoque por tipo de grão</p>`;
 
   if (gs.grains.length === 0) {
     html += emptyState("🌾", "Nenhum grão em estoque ainda", "Assim que houver produção (Entradas) de alguma cultura, o estoque daquele grão aparece aqui.");
@@ -1274,37 +1352,57 @@ function renderSalesList() {
   if (state.sales.length === 0) {
     return emptyState("🚚", "Nenhuma venda registrada", "Toque em “Nova venda” para registrar a primeira carga vendida.");
   }
-  return state.sales.map((s) => {
-    const hasPhotos = s.has_photo_gross || s.has_photo_tare || s.has_photo_plate;
-    const kinds = JSON.stringify(
-      [
-        s.has_photo_gross && { kind: "gross", label: "Peso bruto" },
-        s.has_photo_tare && { kind: "tare", label: "Tara" },
-        s.has_photo_plate && { kind: "plate", label: "Placa do veículo" },
-      ].filter(Boolean)
-    );
-    return `<div class="refill-row">
-      <div class="refill-icon">🚚</div>
-      <div class="refill-main">
-        <div class="refill-top">
-          <span>${escapeHtml(s.vehicle_plate || "Sem placa")} ${isAdmin() ? `<span class="paid-tag ${s.paid ? "yes" : "no"}">${s.paid ? "Pago" : "Pendente"}</span>` : ""}</span>
-          ${isAdmin() ? `<span class="ff-mono" style="color:var(--yellow);">${fmtBRL(s.total_value)}</span>` : ""}
+
+  // Agrupa por comprador (pessoa/empresa) — cada grupo vira uma seção com
+  // o nome de quem comprou, e as vendas daquele comprador embaixo.
+  const groups = [];
+  const groupByBuyer = {};
+  state.sales.forEach((s) => {
+    const key = s.buyer || "Sem comprador definido";
+    if (!groupByBuyer[key]) {
+      groupByBuyer[key] = { buyer: key, items: [] };
+      groups.push(groupByBuyer[key]);
+    }
+    groupByBuyer[key].items.push(s);
+  });
+
+  return groups.map((g) => `
+    <p class="section-label" style="margin-top:14px;">${escapeHtml(g.buyer)}</p>
+    ${g.items.map((s) => {
+      const hasPhotos = s.has_photo_gross || s.has_photo_tare || s.has_photo_plate;
+      const kinds = JSON.stringify(
+        [
+          s.has_photo_gross && { kind: "gross", label: "Peso bruto" },
+          s.has_photo_tare && { kind: "tare", label: "Tara" },
+          s.has_photo_plate && { kind: "plate", label: "Placa do veículo" },
+        ].filter(Boolean)
+      );
+      return `<div class="refill-row">
+        <div class="refill-icon">🚚</div>
+        <div class="refill-main">
+          <div class="refill-top">
+            <span>${escapeHtml(s.vehicle_plate || "Sem placa")} ${isAdmin() ? `<span class="paid-tag ${s.paid ? "yes" : "no"}">${s.paid ? "Pago" : "Pendente"}</span>` : ""}</span>
+            ${isAdmin() ? `<span class="ff-mono" style="color:var(--yellow);">${fmtBRL(s.total_value)}</span>` : ""}
+          </div>
+          <div class="refill-meta">
+            <span>${fmtDate(s.date)}</span><span class="dot"></span>
+            <span class="ff-mono">${fmtNum(s.bags_60kg, 1)} sc</span><span class="dot"></span>
+            <span class="ff-mono">${fmtBRL(s.price_per_bag)}/sc</span>
+            ${s.crop ? `<span class="dot"></span><span>🌱 ${escapeHtml(s.crop)}</span>` : ""}
+            ${s.operator ? `<span class="dot"></span><span>Lançado por: ${escapeHtml(s.operator)}</span>` : ""}
+          </div>
+          <div style="display:flex; gap:10px; align-items:center; margin-top:4px; flex-wrap:wrap;">
+            ${hasPhotos ? `<button class="refill-photo-link" style="padding:0;" onclick='openPhotoViewer("sales", ${s.id}, ${kinds})'>📷 ver fotos</button>` : ""}
+            ${isAdmin() ? `<button class="refill-photo-link" style="padding:0;" onclick="toggleSalePaid(${s.id}, ${!s.paid})">${s.paid ? "Marcar como pendente" : "Marcar como pago"}</button>` : ""}
+          </div>
         </div>
-        <div class="refill-meta">
-          <span>${fmtDate(s.date)}</span><span class="dot"></span>
-          <span class="ff-mono">${fmtNum(s.bags_60kg, 1)} sc</span><span class="dot"></span>
-          <span class="ff-mono">${fmtBRL(s.price_per_bag)}/sc</span>
-          ${s.crop ? `<span class="dot"></span><span>🌱 ${escapeHtml(s.crop)}</span>` : ""}
-          ${s.operator ? `<span class="dot"></span><span>${escapeHtml(s.operator)}</span>` : ""}
-        </div>
-        <div style="display:flex; gap:10px; align-items:center; margin-top:4px;">
-          ${hasPhotos ? `<button class="refill-photo-link" style="padding:0;" onclick='openPhotoViewer("sales", ${s.id}, ${kinds})'>📷 ver fotos</button>` : ""}
-          ${isAdmin() ? `<button class="refill-photo-link" style="padding:0;" onclick="toggleSalePaid(${s.id}, ${!s.paid})">${s.paid ? "Marcar como pendente" : "Marcar como pago"}</button>` : ""}
-        </div>
-      </div>
-      ${isAdmin() ? `<button class="del-btn" onclick="deleteSale(${s.id})" aria-label="Excluir">🗑</button>` : ""}
-    </div>`;
-  }).join("");
+        ${isAdmin() ? `<div style="display:flex; flex-direction:column; gap:6px;">
+          <button class="del-btn" onclick="openSaleModal(${s.id})" aria-label="Editar" style="color:var(--text-muted);">✏️</button>
+          <button class="del-btn" onclick="deleteSale(${s.id})" aria-label="Excluir">🗑</button>
+        </div>` : ""}
+      </div>`;
+    }).join("")}
+  `).join("");
 }
 
 function refillRowHtml(r, compact) {
@@ -2340,23 +2438,26 @@ async function runHarvestExtraction() {
   }
 }
 
-function openSaleModal() {
+function openSaleModal(saleId) {
   salePhotos = { gross: null, tare: null, plate: null };
+  const editing = saleId ? state.sales.find((s) => s.id == saleId) : null;
 
   const cropNames = [...new Set(state.plantings.map((pl) => pl.crop).filter(Boolean))];
   if (cropNames.length === 0) {
-    document.getElementById("modal-root").innerHTML = modalShell("Nova venda",
+    document.getElementById("modal-root").innerHTML = modalShell(editing ? "Editar venda" : "Nova venda",
       `<p style="font-size:14px; color:var(--text-muted);">Cadastre ao menos uma cultura primeiro, em "Custos Pivôs → Culturas" — a venda precisa saber qual grão está sendo vendido.</p>`);
     return;
   }
-  const cropOptions = cropNames.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+  const cropOptions = cropNames.map((c) => `<option value="${escapeHtml(c)}" ${editing && editing.crop === c ? "selected" : ""}>${escapeHtml(c)}</option>`).join("");
 
   const body = `
     <form id="sale-form">
       <div class="field-gap" style="margin-bottom:12px;">
-        <label>Data<input type="date" id="sl-date" value="${todayISO()}" required /></label>
+        <label>Data<input type="date" id="sl-date" value="${editing ? editing.date.slice(0, 10) : todayISO()}" required /></label>
         <label>Tipo de grão<select id="sl-crop">${cropOptions}</select></label>
+        <label>Comprador (pessoa ou empresa)<input type="text" id="sl-buyer" placeholder="Ex.: Tiago Felippe, Cerealista XYZ" value="${editing ? escapeHtml(editing.buyer || "") : ""}" required /></label>
 
+        ${editing ? "" : `
         <div class="weight-photos-grid">
           ${weightPhotoField("sl-gross", "Foto — peso bruto")}
           ${weightPhotoField("sl-tare", "Foto — tara")}
@@ -2367,34 +2468,37 @@ function openSaleModal() {
           <button type="button" class="extract-btn" id="sl-plate-btn" onclick="runSalePlateExtraction()">✨ Ler placa</button>
         </div>
         <p class="extract-hint">Preenche peso bruto, tara e placa automaticamente — confira antes de salvar.</p>
+        `}
 
         <div class="grid2">
-          <label>Peso bruto (kg)<input type="number" id="sl-grossw" class="ff-mono" min="0" step="0.1" required /></label>
-          <label>Tara (kg)<input type="number" id="sl-tarew" class="ff-mono" min="0" step="0.1" required /></label>
+          <label>Peso bruto (kg)<input type="number" id="sl-grossw" class="ff-mono" min="0" step="0.1" value="${editing ? editing.gross_weight_kg : ""}" required /></label>
+          <label>Tara (kg)<input type="number" id="sl-tarew" class="ff-mono" min="0" step="0.1" value="${editing ? editing.tare_weight_kg : ""}" required /></label>
         </div>
         <p class="hint ff-mono" id="sl-net-hint"></p>
 
-        <label>Placa do veículo<input type="text" id="sl-plate-text" placeholder="ABC1D23" style="text-transform:uppercase;" /></label>
+        <label>Placa do veículo<input type="text" id="sl-plate-text" placeholder="ABC1D23" style="text-transform:uppercase;" value="${editing && editing.vehicle_plate ? escapeHtml(editing.vehicle_plate) : ""}" /></label>
 
         <div class="grid2">
-          <label>Preço por saca (60kg)<input type="number" id="sl-price" class="ff-mono" min="0" step="0.01" placeholder="0,00" required /></label>
+          <label>Preço por saca (60kg)<input type="number" id="sl-price" class="ff-mono" min="0" step="0.01" placeholder="0,00" value="${editing ? editing.price_per_bag : ""}" required /></label>
           <label>Valor total<input type="text" id="sl-total-hint" class="ff-mono" disabled /></label>
         </div>
 
         <label style="flex-direction:row; align-items:center; gap:8px;">
-          <input type="checkbox" id="sl-paid" style="width:auto;" /> Já foi pago
+          <input type="checkbox" id="sl-paid" style="width:auto;" ${editing && editing.paid ? "checked" : ""} /> Já foi pago
         </label>
 
-        <label>Operador<input type="text" id="sl-operator" value="${escapeHtml(state.user?.name || "")}" /></label>
-        <label>Observações (opcional)<textarea id="sl-notes" rows="2"></textarea></label>
+        ${editing ? "" : `<label>Operador<input type="text" id="sl-operator" value="${escapeHtml(state.user?.name || "")}" /></label>`}
+        <label>Observações (opcional)<textarea id="sl-notes" rows="2">${editing && editing.notes ? escapeHtml(editing.notes) : ""}</textarea></label>
       </div>
-      <button type="submit" class="btn-primary" style="width:100%;">SALVAR VENDA →</button>
+      <button type="submit" class="btn-primary" style="width:100%;">${editing ? "SALVAR ALTERAÇÕES" : "SALVAR VENDA"} →</button>
     </form>`;
-  document.getElementById("modal-root").innerHTML = modalShell("Nova venda", body);
+  document.getElementById("modal-root").innerHTML = modalShell(editing ? "Editar venda" : "Nova venda", body);
 
-  document.getElementById("sl-gross-input").addEventListener("change", () => pickWeightPhoto("sl-gross", salePhotos, "gross"));
-  document.getElementById("sl-tare-input").addEventListener("change", () => pickWeightPhoto("sl-tare", salePhotos, "tare"));
-  document.getElementById("sl-plate-input").addEventListener("change", () => pickWeightPhoto("sl-plate", salePhotos, "plate"));
+  if (!editing) {
+    document.getElementById("sl-gross-input").addEventListener("change", () => pickWeightPhoto("sl-gross", salePhotos, "gross"));
+    document.getElementById("sl-tare-input").addEventListener("change", () => pickWeightPhoto("sl-tare", salePhotos, "tare"));
+    document.getElementById("sl-plate-input").addEventListener("change", () => pickWeightPhoto("sl-plate", salePhotos, "plate"));
+  }
 
   const grossEl = document.getElementById("sl-grossw");
   const tareEl = document.getElementById("sl-tarew");
@@ -2416,27 +2520,46 @@ function openSaleModal() {
   grossEl.addEventListener("input", updateHints);
   tareEl.addEventListener("input", updateHints);
   priceEl.addEventListener("input", updateHints);
+  updateHints();
 
   document.getElementById("sale-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     try {
-      await api("/sales", {
-        method: "POST",
-        body: JSON.stringify({
-          date: document.getElementById("sl-date").value,
-          crop: document.getElementById("sl-crop").value,
-          grossWeightKg: Number(grossEl.value),
-          tareWeightKg: Number(tareEl.value),
-          vehiclePlate: document.getElementById("sl-plate-text").value,
-          pricePerBag: Number(priceEl.value),
-          paid: document.getElementById("sl-paid").checked,
-          operator: document.getElementById("sl-operator").value,
-          notes: document.getElementById("sl-notes").value,
-          photoGross: salePhotos.gross,
-          photoTare: salePhotos.tare,
-          photoPlate: salePhotos.plate,
-        }),
-      });
+      if (editing) {
+        await api("/sales/" + editing.id, {
+          method: "PUT",
+          body: JSON.stringify({
+            date: document.getElementById("sl-date").value,
+            crop: document.getElementById("sl-crop").value,
+            buyer: document.getElementById("sl-buyer").value,
+            grossWeightKg: Number(grossEl.value),
+            tareWeightKg: Number(tareEl.value),
+            vehiclePlate: document.getElementById("sl-plate-text").value,
+            pricePerBag: Number(priceEl.value),
+            paid: document.getElementById("sl-paid").checked,
+            notes: document.getElementById("sl-notes").value,
+          }),
+        });
+      } else {
+        await api("/sales", {
+          method: "POST",
+          body: JSON.stringify({
+            date: document.getElementById("sl-date").value,
+            crop: document.getElementById("sl-crop").value,
+            buyer: document.getElementById("sl-buyer").value,
+            grossWeightKg: Number(grossEl.value),
+            tareWeightKg: Number(tareEl.value),
+            vehiclePlate: document.getElementById("sl-plate-text").value,
+            pricePerBag: Number(priceEl.value),
+            paid: document.getElementById("sl-paid").checked,
+            operator: document.getElementById("sl-operator").value,
+            notes: document.getElementById("sl-notes").value,
+            photoGross: salePhotos.gross,
+            photoTare: salePhotos.tare,
+            photoPlate: salePhotos.plate,
+          }),
+        });
+      }
       closeModal();
       await loadAll();
     } catch (err) { showBanner(err.message); }
@@ -2560,9 +2683,21 @@ function modalShell(title, bodyHtml) {
    Boot
    ========================================================================= */
 (function boot() {
-  setAuthMode("login");
-  if (state.token && state.user) {
-    enterApp();
+  const resetToken = new URLSearchParams(location.search).get("reset");
+  if (resetToken) {
+    // Link de recuperação de senha — força a tela de login/reset mesmo que
+    // já exista uma sessão salva, e limpa o token da URL (não queremos ele
+    // ficando no histórico do navegador).
+    state.resetToken = resetToken;
+    state.token = null;
+    state.user = null;
+    history.replaceState(null, "", location.pathname);
+    setAuthMode("reset");
+  } else {
+    setAuthMode("login");
+    if (state.token && state.user) {
+      enterApp();
+    }
   }
   // Registra o service worker cedo (independente de notificações push) —
   // é o que permite "Adicionar à tela inicial" funcionar de forma

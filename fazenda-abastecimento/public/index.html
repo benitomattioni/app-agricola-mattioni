@@ -117,7 +117,7 @@
   .subtitle { font-size: 12px; color: var(--text-muted); margin: 3px 0 0; }
   .icon-btn { background: var(--surface2); border-radius: 8px; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); }
 
-  nav.tabs { display: flex; gap: 4px; }
+  nav.tabs { display: flex; flex-wrap: wrap; gap: 4px; row-gap: 6px; }
   .tab-btn { padding: 10px 12px; background: transparent; color: var(--text-muted); font-family: 'Oswald', sans-serif; font-size: 13px; font-weight: 500; letter-spacing: 0.03em; border-bottom: 2px solid transparent; border-radius: 0; }
   .tab-btn.active { color: var(--yellow); border-bottom: 2px solid var(--yellow); }
 
@@ -237,6 +237,30 @@
   .paid-tag { font-size: 10px; padding: 2px 8px; border-radius: 999px; letter-spacing: 0.03em; font-weight: 600; text-transform: uppercase; }
   .paid-tag.yes { background: rgba(127,160,91,0.18); color: var(--green); }
   .paid-tag.no { background: rgba(193,80,46,0.18); color: var(--rust); }
+
+  /* Ticket de pesagem — tela branca por cima de tudo, pensada pra imprimir
+     ou virar PDF pelo "Imprimir" do navegador. */
+  #ticket-print-overlay { position: fixed; inset: 0; background: #fff; color: #1a1a1a; z-index: 9999; overflow-y: auto; padding: 20px; font-family: 'Courier New', monospace; }
+  .ticket-print-actions { display: flex; gap: 10px; margin-bottom: 24px; max-width: 380px; margin-left: auto; margin-right: auto; }
+  .ticket-print-actions button { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #ccc; background: #f2f2f2; font-weight: 600; font-family: 'Inter', sans-serif; font-size: 13px; color: #1a1a1a; }
+  .ticket-print-sheet { max-width: 380px; margin: 0 auto; }
+  .ticket-print-sheet h1 { font-size: 16px; text-align: center; margin: 0 0 2px; }
+  .ticket-sub { text-align: center; font-size: 12px; margin: 0 0 4px; }
+  .ticket-number { text-align: center; font-size: 13px; font-weight: 700; margin: 0 0 10px; }
+  .ticket-print-sheet hr { border: none; border-top: 1px dashed #999; margin: 10px 0; }
+  .ticket-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .ticket-table td { padding: 3px 0; }
+  .ticket-table td:first-child { color: #555; }
+  .ticket-table td:last-child { text-align: right; font-weight: 600; }
+  .ticket-net td { font-size: 16px; }
+  .ticket-footer { font-size: 10px; color: #555; text-align: center; margin-top: 10px; }
+  .ticket-sign { margin-top: 44px; border-top: 1px solid #333; padding-top: 4px; text-align: center; font-size: 11px; color: #555; }
+  @media print {
+    body * { visibility: hidden; }
+    #ticket-print-overlay, #ticket-print-overlay * { visibility: visible; }
+    #ticket-print-overlay { position: absolute; left: 0; top: 0; padding: 0; }
+    .no-print { display: none !important; }
+  }
   .weight-photos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; }
 
   .hidden { display: none !important; }
@@ -310,6 +334,7 @@
     <nav class="tabs wrap" style="padding-bottom:0;">
       <button class="tab-btn active" data-tab="dashboard" onclick="setTab('dashboard')">Painel</button>
       <button class="tab-btn" data-tab="refills" onclick="setTab('refills')">Abastecimentos</button>
+      <button class="tab-btn" data-tab="pesagens" onclick="setTab('pesagens')">Pesagens</button>
       <button class="tab-btn" data-tab="machines" onclick="setTab('machines')">Máquinas</button>
       <button class="tab-btn" data-tab="defensivos" onclick="setTab('defensivos')">Custos Pivôs</button>
       <button class="tab-btn" data-tab="producao" onclick="setTab('producao')">Entradas</button>
@@ -327,6 +352,7 @@
     <div id="tab-defensivos" class="hidden"></div>
     <div id="tab-producao" class="hidden"></div>
     <div id="tab-estoque-graos" class="hidden"></div>
+    <div id="tab-pesagens" class="hidden"></div>
     <div id="tab-team" class="hidden"></div>
   </main>
 
@@ -382,6 +408,8 @@ let state = {
   plantingCosts: { plantings: [], generalDiesel: 0 },
   oilChanges: [],
   fieldWorkers: [],
+  weighingTickets: [],
+  weighingSubTab: "aberto",
 };
 
 const PRODUCT_CATEGORIES = [
@@ -641,6 +669,7 @@ async function loadAll() {
       api("/plantings"),
       api("/oil-changes"),
       api("/field-workers"),
+      api("/weighing-tickets"),
     ];
     if (isAdmin()) calls.push(api("/grain-stock"));
     if (isAdmin()) calls.push(api("/users"));
@@ -658,7 +687,8 @@ async function loadAll() {
     state.plantings = results[8];
     state.oilChanges = results[9];
     state.fieldWorkers = results[10];
-    let next = 11;
+    state.weighingTickets = results[11];
+    let next = 12;
     state.grainStock = isAdmin() ? results[next++] : null;
     if (isAdmin()) state.team = results[next++];
     state.energyEntries = isAdmin() ? results[next++] : [];
@@ -702,6 +732,7 @@ function setTab(tab) {
   document.getElementById("tab-defensivos").classList.toggle("hidden", tab !== "defensivos");
   document.getElementById("tab-producao").classList.toggle("hidden", tab !== "producao");
   document.getElementById("tab-estoque-graos").classList.toggle("hidden", tab !== "estoque-graos");
+  document.getElementById("tab-pesagens").classList.toggle("hidden", tab !== "pesagens");
   document.getElementById("tab-team").classList.toggle("hidden", tab !== "team");
 
   const fab = document.getElementById("fab-btn");
@@ -724,6 +755,7 @@ function setTab(tab) {
       defensivos: { produtos: "NOVO PRODUTO", pivos: "NOVO PIVÔ", aplicacoes: "APLICAÇÃO", culturas: "NOVA CULTURA", energia: "NOVO LANÇAMENTO" }[state.defensivosSubTab],
       producao: "NOVA CARGA",
       "estoque-graos": "NOVA VENDA",
+      pesagens: "NOVA PESAGEM",
     };
     document.getElementById("fab-label").textContent = labels[tab] || "NOVO ABASTECIMENTO";
     fabSecondary.classList.toggle("hidden", !isAplicacoesTab);
@@ -742,6 +774,7 @@ function openFabAction() {
   }
   else if (state.tab === "producao") openHarvestModal();
   else if (state.tab === "estoque-graos") openSaleModal();
+  else if (state.tab === "pesagens") openWeighingKindModal();
   else openRefillModal();
 }
 function openFabActionSecondary() {
@@ -759,6 +792,10 @@ function setEstoqueSubTab(sub) {
   state.estoqueSubTab = sub;
   setTab("estoque-graos");
 }
+function setWeighingSubTab(sub) {
+  state.weighingSubTab = sub;
+  setTab("pesagens");
+}
 
 /* =========================================================================
    Render
@@ -770,6 +807,7 @@ function render() {
   renderDefensivos();
   renderProducao();
   renderEstoqueGraos();
+  renderPesagens();
   if (isAdmin()) renderTeam();
 }
 
@@ -1303,6 +1341,25 @@ function renderGrainSummary() {
       <div class="stat-card"><p class="label">A receber</p><p class="value ff-mono" style="color:var(--rust);">${fmtBRL(totalPending)}</p></div>
     </div>`;
 
+  const pending = state.sales.filter((s) => !s.paid).sort((a, b) => (a.date < b.date ? 1 : -1));
+  html += `<p class="section-label" style="margin-top:14px;">Pendentes</p>`;
+  if (pending.length === 0) {
+    html += emptyState("✅", "Nada pendente", "Todas as vendas registradas já foram marcadas como pagas.");
+  } else {
+    html += `<div class="panel">` + pending.map((s) => `
+      <div class="bar-row">
+        <div class="bar-top">
+          <span>${escapeHtml(s.buyer || "Sem comprador definido")}${s.vehicle_plate ? " — " + escapeHtml(s.vehicle_plate) : ""}</span>
+          <span class="ff-mono" style="color:var(--rust);">${Number(s.price_per_bag) > 0 ? fmtBRL(s.total_value) : "Sem preço"}</span>
+        </div>
+        <p class="hint" style="margin:4px 0 0;">${fmtDate(s.date)} · ${fmtNum(s.bags_60kg, 1)} sc${s.crop ? " · 🌱 " + escapeHtml(s.crop) : ""}</p>
+        <div style="display:flex; gap:10px; align-items:center; margin-top:4px; flex-wrap:wrap;">
+          <button type="button" class="refill-photo-link" style="padding:0;" onclick="openSaleModal(${s.id})">✏️ ${Number(s.price_per_bag) > 0 ? "Editar" : "Definir preço"}</button>
+          <button type="button" class="refill-photo-link" style="padding:0;" onclick="toggleSalePaid(${s.id}, true)">Marcar como pago</button>
+        </div>
+      </div>`).join("") + `</div>`;
+  }
+
   const byBuyer = {};
   state.sales.forEach((s) => {
     const key = s.buyer || "Sem comprador definido";
@@ -1403,6 +1460,406 @@ function renderSalesList() {
       </div>`;
     }).join("")}
   `).join("");
+}
+
+/* =========================================================================
+   Pesagens (balança) — 1ª pesagem → 2ª pesagem → destino conforme o tipo
+   ========================================================================= */
+function renderPesagens() {
+  const el = document.getElementById("tab-pesagens");
+  if (!el) return;
+
+  let html = `<div class="sub-tabs">
+    <button class="sub-tab ${state.weighingSubTab === "aberto" ? "active" : ""}" onclick="setWeighingSubTab('aberto')">Em aberto</button>
+    <button class="sub-tab ${state.weighingSubTab === "terceiros" ? "active" : ""}" onclick="setWeighingSubTab('terceiros')">Terceiros</button>
+  </div>`;
+
+  html += state.weighingSubTab === "aberto" ? renderOpenWeighings() : renderClosedThirdPartyTickets();
+
+  el.innerHTML = html;
+}
+
+function weighingFlowLabel(t) {
+  if (t.kind === "terceiros") return "🧾 Terceiros" + (t.client_name ? " — " + escapeHtml(t.client_name) : "");
+  if (t.flow === "saida") return "🌾 Fazenda → Saída" + (t.crop ? " (" + escapeHtml(t.crop) + ")" : "");
+  if (t.subflow === "produto") {
+    const p = state.products.find((x) => x.id === t.product_id);
+    return "📦 Fazenda → Entrada · Produto" + (p ? " (" + escapeHtml(p.name) + ")" : "");
+  }
+  if (t.subflow === "grao") {
+    const pl = state.plantings.find((x) => x.id === t.planting_id);
+    return "🌱 Fazenda → Entrada · Grão" + (pl ? " (" + escapeHtml(pl.crop) + ")" : "");
+  }
+  return "Fazenda";
+}
+
+function renderOpenWeighings() {
+  const open = state.weighingTickets
+    .filter((t) => (t.closing_weight_kg === null || t.closing_weight_kg === undefined) || (t.migrated_to === null && t.subflow === "grao"))
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
+
+  if (open.length === 0) {
+    return emptyState("⚖️", "Nenhuma pesagem em aberto",
+      "Toque em “Nova pesagem” pra lançar a 1ª leitura da balança — a 2ª você registra depois, quando o veículo voltar.");
+  }
+
+  return open.map((t) => {
+    const isWeighed = t.closing_weight_kg !== null && t.closing_weight_kg !== undefined;
+    const needsCultura = t.subflow === "grao" && !t.planting_id;
+    const isEntradaFlow = t.kind === "fazenda" && t.flow === "entrada";
+    const firstLabel = isEntradaFlow ? "Peso bruto" : "Tara";
+    const weightHint = isWeighed
+      ? `Líquido: ${fmtNum(t.net_weight_kg, 0)} kg`
+      : `${firstLabel}: ${fmtNum(t.opening_weight_kg, 0)} kg`;
+    return `<div class="refill-row">
+      <div class="refill-icon">${t.kind === "terceiros" ? "🧾" : "🚜"}</div>
+      <div class="refill-main">
+        <div class="refill-top">
+          <span>${needsCultura ? "🌱 Entrada de grão — sem cultura" : weighingFlowLabel(t)}</span>
+          <span class="ff-mono" style="color:var(--yellow);">${weightHint}</span>
+        </div>
+        <div class="refill-meta">
+          <span>${fmtDate(t.date)}</span>
+          ${t.vehicle_plate ? `<span class="dot"></span><span>${escapeHtml(t.vehicle_plate)}</span>` : ""}
+          ${t.driver_name ? `<span class="dot"></span><span>${escapeHtml(t.driver_name)}</span>` : ""}
+          ${t.cargo ? `<span class="dot"></span><span>${escapeHtml(t.cargo)}</span>` : ""}
+          ${t.operator ? `<span class="dot"></span><span>${escapeHtml(t.operator)}</span>` : ""}
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+          ${needsCultura ? `<button type="button" class="small-btn primary" onclick="openWeighingClassifyModal(${t.id})">🌱 Selecionar cultura</button>` : ""}
+          ${!isWeighed ? `<button type="button" class="small-btn primary" onclick="openWeighingCloseModal(${t.id})">⚖️ Registrar ${isEntradaFlow ? "tara" : "peso bruto"}</button>` : ""}
+        </div>
+      </div>
+      ${isAdmin() ? `<button class="del-btn" onclick="deleteWeighingTicket(${t.id})" aria-label="Excluir">🗑</button>` : ""}
+    </div>`;
+  }).join("");
+}
+
+// Só terceiros fica visível aqui depois de fechado — pesagens da fazenda
+// (entrada de produto/grão, saída) migram pro lugar certo (Produtos,
+// Entradas ou Saídas) assim que fecham, e saem da lista de Pesagens.
+function renderClosedThirdPartyTickets() {
+  const list = state.weighingTickets
+    .filter((t) => t.kind === "terceiros" && t.closing_weight_kg !== null && t.closing_weight_kg !== undefined)
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
+
+  if (list.length === 0) {
+    return emptyState("🧾", "Nenhuma pesagem de terceiros concluída",
+      "Pesagens de terceiros aparecem aqui depois de registrar a 2ª leitura (veja a sub-aba “Em aberto”).");
+  }
+
+  return list.map((t) => `
+    <div class="refill-row">
+      <div class="refill-icon">🧾</div>
+      <div class="refill-main">
+        <div class="refill-top">
+          <span>${escapeHtml(t.vehicle_plate || "Sem placa")}${t.client_name ? " — " + escapeHtml(t.client_name) : ""} <span class="paid-tag ${t.paid ? "yes" : "no"}">${t.paid ? "Pago" : "Pendente"}</span></span>
+          <span class="ff-mono" style="color:var(--green);">${fmtNum(t.net_weight_kg, 0)} kg líq.</span>
+        </div>
+        <div class="refill-meta">
+          <span>${fmtDate(t.date)}</span><span class="dot"></span>
+          <span class="ff-mono">Tara ${fmtNum(t.tare_weight_kg, 0)} · Bruto ${fmtNum(t.gross_weight_kg, 0)}</span>
+          ${t.cargo ? `<span class="dot"></span><span>${escapeHtml(t.cargo)}</span>` : ""}
+          ${t.price !== null ? `<span class="dot"></span><span class="ff-mono">${fmtBRL(t.price)}</span>` : ""}
+          ${t.driver_name ? `<span class="dot"></span><span>${escapeHtml(t.driver_name)}</span>` : ""}
+        </div>
+        <div style="display:flex; gap:10px; align-items:center; margin-top:6px; flex-wrap:wrap;">
+          <button class="refill-photo-link" style="padding:0;" onclick="printWeighingTicket(${t.id})">🖨️ Ticket</button>
+          ${isAdmin() ? `<button class="refill-photo-link" style="padding:0;" onclick="toggleWeighingPaid(${t.id}, ${!t.paid})">${t.paid ? "Marcar como pendente" : "Marcar como pago"}</button>` : ""}
+        </div>
+      </div>
+      ${isAdmin() ? `<button class="del-btn" onclick="deleteWeighingTicket(${t.id})" aria-label="Excluir">🗑</button>` : ""}
+    </div>`).join("");
+}
+
+// Passo 1: Fazenda ou Terceiros?
+function openWeighingKindModal() {
+  const body = `
+    <div class="field-gap" style="margin-bottom:4px;">
+      <p class="hint" style="margin:-4px 0 12px;">Essa pesagem é da própria fazenda ou você está prestando o serviço pra um terceiro?</p>
+      <button type="button" class="btn-primary" style="width:100%; margin-bottom:10px;" onclick="openWeighingFlowModal()">🚜 Fazenda</button>
+      <button type="button" class="btn-primary" style="width:100%; background:var(--green);" onclick="openWeighingOpenModal('terceiros')">🧾 Terceiros</button>
+    </div>`;
+  document.getElementById("modal-root").innerHTML = modalShell("Nova pesagem", body);
+}
+
+// Passo 2 (só fazenda): Entrada ou Saída?
+function openWeighingFlowModal() {
+  const body = `
+    <div class="field-gap" style="margin-bottom:4px;">
+      <p class="hint" style="margin:-4px 0 12px;">Esse veículo está entrando com alguma coisa, ou saindo com grão da fazenda?</p>
+      <button type="button" class="btn-primary" style="width:100%; margin-bottom:10px;" onclick="openWeighingSubflowModal()">📥 Entrada</button>
+      <button type="button" class="btn-primary" style="width:100%; background:var(--rust);" onclick="openWeighingOpenModal('fazenda', 'saida')">📤 Saída</button>
+    </div>`;
+  document.getElementById("modal-root").innerHTML = modalShell("Nova pesagem — Fazenda", body);
+}
+
+// Passo 3 (só entrada): Produto (insumo) ou Grão (colheita)?
+function openWeighingSubflowModal() {
+  const body = `
+    <div class="field-gap" style="margin-bottom:4px;">
+      <p class="hint" style="margin:-4px 0 12px;">O que está entrando: um produto/insumo (adubo, semente...) ou grão da colheita?</p>
+      <button type="button" class="btn-primary" style="width:100%; margin-bottom:10px;" onclick="openWeighingOpenModal('fazenda', 'entrada', 'produto')">📦 Produto</button>
+      <button type="button" class="btn-primary" style="width:100%; background:var(--green);" onclick="openWeighingOpenModal('fazenda', 'entrada', 'grao')">🌱 Grão</button>
+    </div>`;
+  document.getElementById("modal-root").innerHTML = modalShell("Nova pesagem — Entrada", body);
+}
+
+// Passo final: formulário da 1ª leitura da balança — os campos mudam
+// conforme kind/flow/subflow.
+function openWeighingOpenModal(kind, flow, subflow) {
+  const isTerceiros = kind === "terceiros";
+  const isSaida = kind === "fazenda" && flow === "saida";
+  const isEntradaProduto = kind === "fazenda" && flow === "entrada" && subflow === "produto";
+  const isEntradaGrao = kind === "fazenda" && flow === "entrada" && subflow === "grao";
+  const isEntrada = isEntradaProduto || isEntradaGrao;
+
+  if (isEntradaProduto && state.products.length === 0) {
+    document.getElementById("modal-root").innerHTML = modalShell("Nova pesagem",
+      `<p style="font-size:14px; color:var(--text-muted);">Cadastre um produto primeiro, em "Custos Pivôs → Produtos".</p>`);
+    return;
+  }
+  if (isEntradaGrao && state.plantings.length === 0) {
+    document.getElementById("modal-root").innerHTML = modalShell("Nova pesagem",
+      `<p style="font-size:14px; color:var(--text-muted);">Cadastre uma cultura primeiro, em "Custos Pivôs → Culturas".</p>`);
+    return;
+  }
+
+  const cropNames = [...new Set(state.plantings.map((pl) => pl.crop).filter(Boolean))];
+  if (isSaida && cropNames.length === 0) {
+    document.getElementById("modal-root").innerHTML = modalShell("Nova pesagem",
+      `<p style="font-size:14px; color:var(--text-muted);">Cadastre uma cultura primeiro, em "Custos Pivôs → Culturas" — a saída precisa saber qual grão está indo embora.</p>`);
+    return;
+  }
+
+  const title = isTerceiros ? "Nova pesagem — Terceiros"
+    : isSaida ? "Nova pesagem — Fazenda → Saída"
+    : isEntradaProduto ? "Nova pesagem — Entrada de produto"
+    : "Nova pesagem — Entrada de grão";
+
+  const weightLabel = isEntrada ? "Peso bruto (veículo carregado, kg)" : "Peso da tara (veículo vazio, kg)";
+
+  const body = `
+    <form id="weighing-open-form">
+      <div class="field-gap" style="margin-bottom:12px;">
+        <label>Data<input type="date" id="wo-date" value="${todayISO()}" required /></label>
+        ${isTerceiros ? `<label>Cliente/Empresa<input type="text" id="wo-client" required /></label>` : ""}
+        ${isSaida ? `<label>Tipo de grão<select id="wo-crop">${cropNames.map((c) => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("")}</select></label>` : ""}
+        ${isEntradaProduto ? `<label>Produto<select id="wo-product">${state.products.map((p) => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join("")}</select></label>` : ""}
+        ${isEntradaGrao ? `<label>Cultura<select id="wo-planting">${state.plantings.map((pl) => `<option value="${pl.id}">${escapeHtml(pl.crop)} — ${pl.pivot_number ? "Pivô " + escapeHtml(pl.pivot_number) + " — " : ""}${escapeHtml(pl.pivot_name)} (${fmtDate(pl.planting_date)})</option>`).join("")}</select></label>` : ""}
+        <label>Placa do veículo<input type="text" id="wo-plate" placeholder="ABC1D23" style="text-transform:uppercase;" /></label>
+        <label>Motorista (opcional)<input type="text" id="wo-driver" /></label>
+        ${isTerceiros ? `<label>Produto/Carga (opcional)<input type="text" id="wo-cargo" placeholder="Ex.: Soja, Areia..." /></label>` : ""}
+        <label>${weightLabel}<input type="number" id="wo-weight" class="ff-mono" min="0" step="0.1" required /></label>
+        <label>Operador<input type="text" id="wo-operator" value="${escapeHtml(state.user?.name || "")}" /></label>
+        <label>Observações (opcional)<textarea id="wo-notes" rows="2"></textarea></label>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;">REGISTRAR 1ª PESAGEM →</button>
+    </form>`;
+  document.getElementById("modal-root").innerHTML = modalShell(title, body);
+
+  document.getElementById("weighing-open-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      await api("/weighing-tickets", {
+        method: "POST",
+        body: JSON.stringify({
+          kind,
+          flow: kind === "fazenda" ? flow : undefined,
+          subflow: isEntrada ? subflow : undefined,
+          date: document.getElementById("wo-date").value,
+          vehiclePlate: document.getElementById("wo-plate").value,
+          driverName: document.getElementById("wo-driver").value,
+          clientName: isTerceiros ? document.getElementById("wo-client").value : undefined,
+          cargo: isTerceiros ? document.getElementById("wo-cargo").value : undefined,
+          crop: isSaida ? document.getElementById("wo-crop").value : undefined,
+          productId: isEntradaProduto ? document.getElementById("wo-product").value : undefined,
+          plantingId: isEntradaGrao ? document.getElementById("wo-planting").value : undefined,
+          openingWeightKg: Number(document.getElementById("wo-weight").value),
+          operator: document.getElementById("wo-operator").value,
+          notes: document.getElementById("wo-notes").value,
+        }),
+      });
+      closeModal();
+      state.weighingSubTab = "aberto";
+      await loadAll();
+    } catch (err) { showBanner(err.message); }
+  });
+}
+
+// Fecha a pesagem com a 2ª leitura — os campos extras (preço, comprador,
+// pago) só aparecem quando fazem sentido pro tipo da pesagem.
+// Escolhe a cultura de uma pesagem que chegou pela leitura automática da
+// balança (câmera + peso) sem saber ainda o que estava sendo colhido.
+function openWeighingClassifyModal(ticketId) {
+  const t = state.weighingTickets.find((x) => x.id == ticketId);
+  if (!t) return;
+
+  if (state.plantings.length === 0) {
+    document.getElementById("modal-root").innerHTML = modalShell("Selecionar cultura",
+      `<p style="font-size:14px; color:var(--text-muted);">Cadastre uma cultura primeiro, em "Custos Pivôs → Culturas".</p>`);
+    return;
+  }
+
+  const isWeighed = t.closing_weight_kg !== null && t.closing_weight_kg !== undefined;
+  const body = `
+    <form id="weighing-classify-form">
+      <div class="field-gap" style="margin-bottom:12px;">
+        <p class="hint" style="margin:-4px 0 4px;">
+          ${t.vehicle_plate ? escapeHtml(t.vehicle_plate) + " · " : ""}${isWeighed ? "Líquido: " + fmtNum(t.net_weight_kg, 0) + " kg" : "1ª leitura: " + fmtNum(t.opening_weight_kg, 0) + " kg"}
+        </p>
+        <label>Cultura<select id="wc-planting">${state.plantings.map((pl) => `<option value="${pl.id}">${escapeHtml(pl.crop)} — ${pl.pivot_number ? "Pivô " + escapeHtml(pl.pivot_number) + " — " : ""}${escapeHtml(pl.pivot_name)} (${fmtDate(pl.planting_date)})</option>`).join("")}</select></label>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;">SALVAR CULTURA →</button>
+    </form>`;
+  document.getElementById("modal-root").innerHTML = modalShell("Selecionar cultura", body);
+
+  document.getElementById("weighing-classify-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      await api("/weighing-tickets/" + ticketId + "/classify", {
+        method: "PUT",
+        body: JSON.stringify({ plantingId: document.getElementById("wc-planting").value }),
+      });
+      closeModal();
+      await loadAll();
+    } catch (err) { showBanner(err.message); }
+  });
+}
+
+function openWeighingCloseModal(ticketId) {
+  const t = state.weighingTickets.find((x) => x.id == ticketId);
+  if (!t) return;
+  const isTerceiros = t.kind === "terceiros";
+  const isSaida = t.kind === "fazenda" && t.flow === "saida";
+  const isEntrada = t.kind === "fazenda" && t.flow === "entrada";
+  const weightLabel = isEntrada ? "Peso da tara (veículo vazio, kg)" : "Peso bruto (veículo carregado, kg)";
+
+  const body = `
+    <form id="weighing-close-form">
+      <div class="field-gap" style="margin-bottom:12px;">
+        <p class="hint" style="margin:-4px 0 4px;">
+          ${weighingFlowLabel(t)}${t.vehicle_plate ? " · " + escapeHtml(t.vehicle_plate) : ""} · 1ª leitura: ${fmtNum(t.opening_weight_kg, 0)} kg
+        </p>
+        <label>${weightLabel}<input type="number" id="wc-weight" class="ff-mono" min="0" step="0.1" required /></label>
+        <p class="hint ff-mono" id="wc-net-hint"></p>
+        ${isTerceiros ? `
+        <label>Valor cobrado (R$, opcional)<input type="number" id="wc-price" class="ff-mono" min="0" step="0.01" placeholder="0,00" /></label>
+        <label style="flex-direction:row; align-items:center; gap:8px;">
+          <input type="checkbox" id="wc-paid" style="width:auto;" /> Já foi pago
+        </label>` : ""}
+        ${isSaida ? `
+        <label>Comprador (pessoa ou empresa, opcional)<input type="text" id="wc-buyer" /></label>
+        <label>Preço por saca — 60kg (R$)<input type="number" id="wc-price-bag" class="ff-mono" min="0" step="0.01" placeholder="0,00" /></label>
+        <p class="hint ff-mono" id="wc-total-hint"></p>
+        <label style="flex-direction:row; align-items:center; gap:8px;">
+          <input type="checkbox" id="wc-paid" style="width:auto;" /> Já foi pago
+        </label>` : ""}
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;">FECHAR PESAGEM →</button>
+    </form>`;
+  document.getElementById("modal-root").innerHTML = modalShell("Registrar 2ª pesagem", body);
+
+  const weightEl = document.getElementById("wc-weight");
+  const netHintEl = document.getElementById("wc-net-hint");
+  const priceBagEl = document.getElementById("wc-price-bag");
+  const totalHintEl = document.getElementById("wc-total-hint");
+
+  function updateHints() {
+    const w = Number(weightEl.value);
+    const opening = Number(t.opening_weight_kg);
+    const net = Math.abs(w - opening);
+    if (w > 0 && w !== opening) {
+      netHintEl.textContent = "≈ " + fmtNum(net, 0) + " kg líquidos";
+      if (isSaida && priceBagEl) {
+        const price = Number(priceBagEl.value) || 0;
+        totalHintEl.textContent = price > 0 ? "Total: " + fmtBRL((net / BAG_KG) * price) : "";
+      }
+    } else {
+      netHintEl.textContent = "";
+      if (totalHintEl) totalHintEl.textContent = "";
+    }
+  }
+  weightEl.addEventListener("input", updateHints);
+  if (priceBagEl) priceBagEl.addEventListener("input", updateHints);
+
+  document.getElementById("weighing-close-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      await api("/weighing-tickets/" + ticketId + "/close", {
+        method: "PUT",
+        body: JSON.stringify({
+          closingWeightKg: Number(weightEl.value),
+          price: isTerceiros && document.getElementById("wc-price").value ? Number(document.getElementById("wc-price").value) : undefined,
+          pricePerBag: isSaida ? Number(priceBagEl.value || 0) : undefined,
+          buyer: isSaida ? document.getElementById("wc-buyer").value : undefined,
+          paid: (isTerceiros || isSaida) ? document.getElementById("wc-paid").checked : false,
+        }),
+      });
+      closeModal();
+      await loadAll();
+    } catch (err) { showBanner(err.message); }
+  });
+}
+
+async function toggleWeighingPaid(id, paid) {
+  try {
+    await api("/weighing-tickets/" + id + "/paid", { method: "PUT", body: JSON.stringify({ paid }) });
+    await loadAll();
+  } catch (err) { showBanner(err.message); }
+}
+
+async function deleteWeighingTicket(id) {
+  if (!confirm("Excluir esta pesagem?")) return;
+  try {
+    await api("/weighing-tickets/" + id, { method: "DELETE" });
+    await loadAll();
+  } catch (err) { showBanner(err.message); }
+}
+
+// Ticket formatado pra imprimir ou salvar como PDF (só pesagens de
+// terceiros) — usa o próprio "Imprimir" do navegador/celular.
+function printWeighingTicket(ticketId) {
+  const t = state.weighingTickets.find((x) => x.id == ticketId);
+  if (!t) return;
+  const existing = document.getElementById("ticket-print-overlay");
+  if (existing) existing.remove();
+
+  const overlay = document.createElement("div");
+  overlay.id = "ticket-print-overlay";
+  overlay.innerHTML = `
+    <div class="ticket-print-actions no-print">
+      <button type="button" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+      <button type="button" onclick="document.getElementById('ticket-print-overlay').remove()">Fechar</button>
+    </div>
+    <div class="ticket-print-sheet">
+      <h1>Agrícola Mattioni Ltda</h1>
+      <p class="ticket-sub">Ticket de Pesagem — Prestação de Serviço</p>
+      <p class="ticket-number">Ticket #${String(t.id).padStart(5, "0")}</p>
+      <hr />
+      <table class="ticket-table">
+        <tr><td>Data</td><td>${fmtDate(t.date)}</td></tr>
+        ${t.vehicle_plate ? `<tr><td>Placa</td><td>${escapeHtml(t.vehicle_plate)}</td></tr>` : ""}
+        ${t.driver_name ? `<tr><td>Motorista</td><td>${escapeHtml(t.driver_name)}</td></tr>` : ""}
+        ${t.client_name ? `<tr><td>Cliente</td><td>${escapeHtml(t.client_name)}</td></tr>` : ""}
+        ${t.cargo ? `<tr><td>Produto/Carga</td><td>${escapeHtml(t.cargo)}</td></tr>` : ""}
+      </table>
+      <hr />
+      <table class="ticket-table">
+        <tr><td>Tara</td><td class="ff-mono">${fmtNum(t.tare_weight_kg, 0)} kg</td></tr>
+        <tr><td>Peso bruto</td><td class="ff-mono">${t.gross_weight_kg !== null && t.gross_weight_kg !== undefined ? fmtNum(t.gross_weight_kg, 0) + " kg" : "—"}</td></tr>
+        <tr class="ticket-net"><td>Peso líquido</td><td class="ff-mono">${t.net_weight_kg !== null && t.net_weight_kg !== undefined ? fmtNum(t.net_weight_kg, 0) + " kg" : "—"}</td></tr>
+      </table>
+      <hr />
+      <table class="ticket-table">
+        <tr><td>Valor cobrado</td><td class="ff-mono">${t.price !== null && t.price !== undefined ? fmtBRL(t.price) : "—"}</td></tr>
+        <tr><td>Status</td><td>${t.paid ? "PAGO" : "PENDENTE"}</td></tr>
+      </table>
+      <hr />
+      <p class="ticket-footer">Emitido em ${new Date().toLocaleString("pt-BR")}${t.operator ? " · Operador: " + escapeHtml(t.operator) : ""}</p>
+      <div class="ticket-sign"><span>Assinatura do responsável</span></div>
+    </div>`;
+  document.body.appendChild(overlay);
 }
 
 function refillRowHtml(r, compact) {

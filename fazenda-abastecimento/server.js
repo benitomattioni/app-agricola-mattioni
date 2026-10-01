@@ -19,6 +19,8 @@ const plantingRoutes = require("./routes/plantings");
 const energyRoutes = require("./routes/energy");
 const oilChangeRoutes = require("./routes/oil-changes");
 const fieldWorkerRoutes = require("./routes/field-workers");
+const weighingTicketRoutes = require("./routes/weighing-tickets");
+const scaleRoutes = require("./routes/scale");
 
 const app = express();
 
@@ -43,6 +45,8 @@ app.use("/api/plantings", plantingRoutes);
 app.use("/api/energy", energyRoutes);
 app.use("/api/oil-changes", oilChangeRoutes);
 app.use("/api/field-workers", fieldWorkerRoutes);
+app.use("/api/weighing-tickets", weighingTicketRoutes);
+app.use("/api/scale", scaleRoutes);
 
 app.get("/api/health", (req, res) => res.json({ ok: true }));
 

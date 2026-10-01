@@ -414,7 +414,93 @@ Excluir ou editar uma carga ou venda atualiza os saldos automaticamente
 (são sempre calculados na hora, a partir das cargas e vendas existentes —
 não dependem de nenhum ajuste manual).
 
-## 12. Papéis de usuário
+## 12. Pesagens (balança rodoviária)
+
+Aba pensada pro fluxo real de uma balança: a 1ª leitura pode ser o veículo
+vazio (tara) ou carregado (peso bruto), dependendo do que está acontecendo
+— às vezes com horas de diferença até a 2ª leitura, enquanto ele carrega
+ou descarrega. Tem 2 sub-abas: **"Em aberto"** e **"Terceiros"**.
+
+O botão **"+ Nova pesagem"** sempre começa com a mesma pergunta —
+**Fazenda ou Terceiros?** — e o caminho muda a partir daí:
+
+- **Terceiros**: pede cliente/empresa, placa, motorista, produto/carga e a
+  1ª leitura (tara — o veículo chega vazio). Ao fechar (2ª leitura, o
+  peso bruto), também pede o **valor cobrado** e se **já foi pago**. Vira
+  um **ticket**, que fica na sub-aba "Terceiros" com o marcador
+  Pago/Pendente e um botão **"🖨️ Ticket"** — abre uma tela formatada tipo
+  recibo e usa o **"Imprimir"** do navegador/celular, de onde dá pra
+  mandar pra uma impressora de verdade ou escolher "Salvar como PDF".
+  Diferente de vendas e aplicações, o valor cobrado aqui aparece pra
+  qualquer pessoa logada (faz sentido, é o que vai impresso no ticket).
+
+- **Fazenda → Saída**: o veículo sai da fazenda com grão. Pergunta o
+  **tipo de grão** e pede a 1ª leitura (tara). Ao fechar (peso bruto),
+  pede comprador (opcional), preço por saca e se já foi pago — e nesse
+  momento **vira automaticamente um lançamento na aba "Saídas"**, com
+  tara, bruto, líquido, sacas e valor calculados. Depois de fechada, a
+  pesagem some da aba Pesagens (o registro passa a viver nas Saídas, onde
+  também dá pra editar/excluir, como qualquer venda).
+
+- **Fazenda → Entrada → Produto**: o veículo chega carregado com um
+  insumo já cadastrado (ex.: MAP, Ureia, KCL). Escolhe o produto e pede a
+  1ª leitura (peso bruto, veículo carregado). Ao fechar (tara, veículo
+  vazio depois de descarregar), **soma o peso líquido direto no estoque
+  daquele produto** (mesma lógica de uma reposição manual).
+
+- **Fazenda → Entrada → Grão**: o veículo chega carregado com grão da
+  colheita. Escolhe a **Cultura** e pede a 1ª leitura (peso bruto). Ao
+  fechar (tara), **vira automaticamente uma carga na aba "Entradas"**,
+  vinculada àquela cultura — o mesmo resultado de lançar manualmente por
+  lá. Ou seja, uma carga pode ser registrada tanto direto na aba
+  "Entradas" quanto por aqui, pela balança — as duas caem no mesmo lugar.
+
+Não importa se a 1ª leitura foi tara ou peso bruto: o app sempre calcula
+o líquido como a diferença entre a maior e a menor leitura, então a ordem
+física das pesagens nunca bagunça a conta.
+
+### Leitura automática (câmera + balança)
+
+Pra quando a balança tiver uma câmera lendo a placa e enviando o peso
+sozinha (ex.: via Raspberry Pi), sem precisar ninguém abrir o app — não
+precisa cadastrar nada antes. O dispositivo só chama:
+
+```
+POST /api/scale/scan
+Header: X-Device-Token: <o valor de SCALE_DEVICE_TOKEN no .env>
+Body: { "plate": "ABC1D23", "weightKg": 32000 }
+```
+
+O app decide sozinho o resto, sempre tratando como **Entrada de Grão**
+(o uso típico dessa automação — o caminhão da própria fazenda trazendo
+a colheita):
+
+- **Não tem pesagem em aberto pra essa placa** → é a 1ª leitura. Abre uma
+  pesagem nova, sem cultura definida ainda.
+- **Já tem uma pesagem em aberto pra essa placa** → é a 2ª leitura.
+  Calcula o líquido (maior peso − menor peso) e, **se a cultura já tiver
+  sido selecionada**, já lança direto na aba Entradas.
+
+Como a câmera só sabe a placa e o peso — não sabe qual cultura está
+sendo colhida — toda pesagem vinda da leitura automática aparece em
+**Pesagens → Em aberto** marcada como "🌱 Entrada de grão — sem
+cultura", com um botão **"🌱 Selecionar cultura"**. Qualquer pessoa
+logada pode tocar ali e escolher a cultura — pode ser feito a qualquer
+momento, antes ou depois da 2ª pesagem chegar:
+- Se a cultura for escolhida **antes** da 2ª leitura, a pesagem só fecha
+  (e migra pra Entradas) quando o caminhão voltar e pesar de novo.
+- Se a cultura for escolhida **depois** (a 2ª leitura já chegou sozinha
+  e ficou esperando), o lançamento em Entradas acontece na hora.
+
+Esse endpoint só aceita chamadas com o cabeçalho `X-Device-Token`
+correto (configurado em `SCALE_DEVICE_TOKEN`, no .env — veja o
+`.env.example`) — ele não usa login de usuário, porque quem chama é uma
+máquina, não uma pessoa. Pesagens de terceiros, saídas, ou entradas de
+produto continuam sendo feitas manualmente pelo app, do jeito normal —
+a automação cobre só o caso de uso mais repetitivo (caminhão da fazenda
+trazendo grão).
+
+## 13. Papéis de usuário
 
 - **Administrador**: cadastra/remove máquinas, pivôs e produtos (defensivos e
   adubos); cadastra/remove contas da equipe e funcionários de campo (aba

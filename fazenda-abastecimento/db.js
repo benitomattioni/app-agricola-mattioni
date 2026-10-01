@@ -375,6 +375,50 @@ async function initDb() {
       created_at TIMESTAMPTZ DEFAULT now()
     );
   `);
+
+  // Pesagens de balança — fluxo em duas etapas (1ª pesagem, depois a 2ª),
+  // com destino diferente conforme o tipo:
+  //  - kind=terceiros: vira um ticket (fica aqui mesmo, pra imprimir)
+  //  - kind=fazenda, flow=saida: ao fechar, vira uma linha em "sales"
+  //  - kind=fazenda, flow=entrada, subflow=grao: vira uma linha em
+  //    "harvest_loads" (Entradas)
+  //  - kind=fazenda, flow=entrada, subflow=produto: soma no estoque do
+  //    produto (adubo etc.) já cadastrado
+  // "opening/closing_weight_kg" são as duas pesagens, na ordem em que
+  // aconteceram de verdade (pode ser tara-depois-bruto OU bruto-depois-
+  // tara, dependendo do fluxo) — tare/gross são sempre calculados como o
+  // menor/maior dos dois, então a ordem de digitação nunca importa.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS weighing_tickets (
+      id SERIAL PRIMARY KEY,
+      kind TEXT NOT NULL CHECK (kind IN ('fazenda', 'terceiros')),
+      flow TEXT CHECK (flow IN ('entrada', 'saida')),
+      subflow TEXT CHECK (subflow IN ('produto', 'grao')),
+      date DATE NOT NULL,
+      vehicle_plate TEXT,
+      driver_name TEXT,
+      client_name TEXT,
+      cargo TEXT,
+      crop TEXT,
+      product_id INTEGER REFERENCES products(id) ON DELETE SET NULL,
+      planting_id INTEGER REFERENCES plantings(id) ON DELETE SET NULL,
+      opening_weight_kg NUMERIC NOT NULL,
+      closing_weight_kg NUMERIC,
+      tare_weight_kg NUMERIC,
+      gross_weight_kg NUMERIC,
+      net_weight_kg NUMERIC,
+      price NUMERIC,
+      price_per_bag NUMERIC,
+      paid BOOLEAN NOT NULL DEFAULT false,
+      operator TEXT,
+      notes TEXT,
+      created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      closed_at TIMESTAMPTZ,
+      migrated_to TEXT,
+      migrated_id INTEGER
+    );
+  `);
 }
 
 module.exports = { pool, initDb };
